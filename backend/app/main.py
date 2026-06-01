@@ -10,7 +10,7 @@ from .config import settings
 from .api import characters, generate, versions, traces, export, share
 from .rate_limit import limiter
 
-app = FastAPI(title="Arcane Architect API", version="1.0.0")
+app = FastAPI(title="Re:Roll Character Builder API", version="1.0.0")
 
 # Rate limiting (per-user daily cap on generation).
 app.state.limiter = limiter

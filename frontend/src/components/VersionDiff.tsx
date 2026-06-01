@@ -31,7 +31,7 @@ export function VersionDiff({ characterId }: { characterId: string }) {
 
   if (versions.length < 2)
     return (
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-brand-stone/60">
         Need at least two versions to compare.
       </p>
     );
@@ -43,13 +43,13 @@ export function VersionDiff({ characterId }: { characterId: string }) {
     <div>
       <div className="mb-4 flex items-center gap-2 text-sm">
         <Select label="From" value={fromN} versions={versions} onChange={setFromN} />
-        <span className="text-slate-500">→</span>
+        <span className="text-brand-stone/50">→</span>
         <Select label="To" value={toN} versions={versions} onChange={setToN} />
       </div>
       {from && to && (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-500">
+            <tr className="text-left text-brand-stone/50">
               <th className="py-1">Field</th>
               <th className="py-1">v{from.version_number}</th>
               <th className="py-1">v{to.version_number}</th>
@@ -63,11 +63,11 @@ export function VersionDiff({ characterId }: { characterId: string }) {
               return (
                 <tr
                   key={f}
-                  className={changed ? "bg-arcane/5" : "text-slate-500"}
+                  className={changed ? "bg-brand-gold/5" : "text-brand-stone/50"}
                 >
                   <td className="py-1 font-medium">{FIELD_LABELS[f]}</td>
                   <td className="py-1">{a}</td>
-                  <td className={`py-1 ${changed ? "text-arcane" : ""}`}>{b}</td>
+                  <td className={`py-1 ${changed ? "text-brand-gold" : ""}`}>{b}</td>
                 </tr>
               );
             })}
@@ -91,9 +91,9 @@ function Select({
 }) {
   return (
     <label className="flex items-center gap-1">
-      <span className="text-slate-400">{label}</span>
+      <span className="text-brand-stone/60">{label}</span>
       <select
-        className="rounded bg-slate-900 px-2 py-1"
+        className="rounded bg-ink-900 px-2 py-1"
         value={value ?? ""}
         onChange={(e) => onChange(Number(e.target.value))}
       >

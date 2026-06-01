@@ -1,4 +1,6 @@
-# Arcane Architect
+# Re:Roll — Character Builder
+
+> **Roll your legend. Build your story.**
 
 An AI-assisted D&D character creator built around **locked-field iteration**:
 fill in any subset of a character sheet, lock the fields you like, and the AI

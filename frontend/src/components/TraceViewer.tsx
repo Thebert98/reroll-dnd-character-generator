@@ -18,7 +18,7 @@ export function TraceViewer({ characterId }: { characterId: string }) {
   }
 
   if (runs.length === 0)
-    return <p className="text-sm text-slate-400">No generations yet.</p>;
+    return <p className="text-sm text-brand-stone/60">No generations yet.</p>;
 
   return (
     <div className="grid gap-4 md:grid-cols-[16rem,1fr]">
@@ -30,14 +30,14 @@ export function TraceViewer({ characterId }: { characterId: string }) {
               <button
                 onClick={() => open(r.id)}
                 className={`w-full rounded border px-2 py-1 text-left text-xs ${
-                  selected?.id === r.id ? "border-arcane" : "border-slate-800"
+                  selected?.id === r.id ? "border-brand-gold" : "border-ink-600/80"
                 }`}
               >
-                <span className={ok ? "text-emerald-400" : "text-red-400"}>
+                <span className={ok ? "text-brand-green" : "text-brand-red"}>
                   {ok ? "✓ valid" : "✗ invalid"}
                 </span>{" "}
                 · {r.model} · {r.latency_ms ?? "?"}ms
-                <div className="text-slate-500">
+                <div className="text-brand-stone/50">
                   {r.created_at?.slice(0, 19).replace("T", " ")}
                 </div>
               </button>
@@ -52,14 +52,14 @@ export function TraceViewer({ characterId }: { characterId: string }) {
 
 function Hint() {
   return (
-    <p className="text-sm text-slate-400">Select a run to inspect its trace.</p>
+    <p className="text-sm text-brand-stone/60">Select a run to inspect its trace.</p>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <details open className="rounded border border-slate-800 p-3">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-200">
+    <details open className="rounded border border-ink-600/80 p-3">
+      <summary className="cursor-pointer text-sm font-semibold text-brand-stone">
         {title}
       </summary>
       <div className="mt-2 text-xs">{children}</div>
@@ -69,7 +69,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Pre({ data }: { data: unknown }) {
   return (
-    <pre className="max-h-64 overflow-auto rounded bg-slate-900 p-2 text-[11px] text-slate-300">
+    <pre className="max-h-64 overflow-auto rounded bg-ink-900 p-2 text-[11px] text-brand-stone/80">
       {typeof data === "string" ? data : JSON.stringify(data, null, 2)}
     </pre>
   );
@@ -79,7 +79,7 @@ function TraceDetail({ run }: { run: TraceRun }) {
   const ok = (run.validation_errors?.length ?? 0) === 0;
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3 text-xs text-slate-400">
+      <div className="flex flex-wrap gap-3 text-xs text-brand-stone/60">
         <span>model: {run.model}</span>
         <span>latency: {run.latency_ms ?? "?"}ms</span>
         <span>
@@ -92,21 +92,21 @@ function TraceDetail({ run }: { run: TraceRun }) {
         {run.steps?.length ? (
           <ol className="space-y-1">
             {run.steps.map((s, i) => (
-              <li key={i} className="rounded bg-slate-900 p-2">
-                <div className="flex justify-between text-slate-300">
+              <li key={i} className="rounded bg-ink-900 p-2">
+                <div className="flex justify-between text-brand-stone/80">
                   <span className="font-mono">
                     {i + 1}. {s.name}
                   </span>
-                  <span className="text-slate-500">{s.duration_ms}ms</span>
+                  <span className="text-brand-stone/50">{s.duration_ms}ms</span>
                 </div>
-                <pre className="mt-1 max-h-32 overflow-auto text-[11px] text-slate-400">
+                <pre className="mt-1 max-h-32 overflow-auto text-[11px] text-brand-stone/60">
                   {JSON.stringify(s.detail, null, 2)}
                 </pre>
               </li>
             ))}
           </ol>
         ) : (
-          <span className="text-slate-500">no step trace</span>
+          <span className="text-brand-stone/50">no step trace</span>
         )}
       </Section>
 
@@ -114,13 +114,13 @@ function TraceDetail({ run }: { run: TraceRun }) {
         {run.locked_fields.length ? (
           <div className="flex flex-wrap gap-1">
             {run.locked_fields.map((f) => (
-              <span key={f} className="rounded bg-arcane/20 px-2 py-0.5 text-arcane">
+              <span key={f} className="rounded bg-brand-gold/20 px-2 py-0.5 text-brand-gold">
                 🔒 {f}
               </span>
             ))}
           </div>
         ) : (
-          <span className="text-slate-500">none — generated from scratch</span>
+          <span className="text-brand-stone/50">none — generated from scratch</span>
         )}
       </Section>
 
@@ -128,27 +128,27 @@ function TraceDetail({ run }: { run: TraceRun }) {
         {run.retrieved_chunks?.length ? (
           <ul className="space-y-2">
             {run.retrieved_chunks.map((c, i) => (
-              <li key={i} className="rounded bg-slate-900 p-2">
-                <div className="mb-1 flex justify-between text-slate-400">
+              <li key={i} className="rounded bg-ink-900 p-2">
+                <div className="mb-1 flex justify-between text-brand-stone/60">
                   <span>{c.section ?? "SRD"}</span>
                   {c.score != null && <span>score {c.score.toFixed(3)}</span>}
                 </div>
-                <div className="text-slate-300">{c.text ?? c.content}</div>
+                <div className="text-brand-stone/80">{c.text ?? c.content}</div>
               </li>
             ))}
           </ul>
         ) : (
-          <span className="text-slate-500">no retrieval (RAG added in Phase 4)</span>
+          <span className="text-brand-stone/50">no retrieval (RAG added in Phase 4)</span>
         )}
       </Section>
 
       <Section title="Validation results">
         {ok ? (
-          <span className="text-emerald-400">✓ All rules passed.</span>
+          <span className="text-brand-green">✓ All rules passed.</span>
         ) : (
           <ul className="space-y-1">
             {run.validation_errors!.map((e, i) => (
-              <li key={i} className="text-red-400">
+              <li key={i} className="text-brand-red">
                 ✗ [{e.rule}] {e.detail}
               </li>
             ))}

@@ -17,7 +17,7 @@ export function SharePage() {
   }, [versionId]);
 
   if (error)
-    return <div className="p-8 text-slate-400">This shared link was not found.</div>;
+    return <div className="p-8 text-brand-stone/60">This shared link was not found.</div>;
   if (!data) return <div className="p-8">Loading…</div>;
 
   return (

@@ -26,7 +26,7 @@ export function VersionHistory({ characterId }: { characterId: string }) {
   }
 
   if (versions.length === 0)
-    return <p className="text-sm text-slate-400">No versions yet.</p>;
+    return <p className="text-sm text-brand-stone/60">No versions yet.</p>;
 
   return (
     <ul className="space-y-2">

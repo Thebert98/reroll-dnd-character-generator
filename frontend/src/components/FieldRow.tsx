@@ -2,6 +2,7 @@ import type { CharacterSheet } from "../types";
 import { FIELD_LABELS } from "../types";
 import { useEditor } from "../store";
 import { Badge } from "./ui/Badge";
+import { IconLock, IconUnlock } from "./brand/icons";
 
 interface Props {
   field: keyof CharacterSheet;
@@ -39,11 +40,12 @@ export function FieldRow({ field }: Props) {
         <button
           onClick={() => toggleLock(field)}
           title={locked ? "Locked — AI will not change this" : "Unlocked — AI may re-roll this"}
-          className={`text-xs font-heading transition-colors ${
+          className={`flex items-center gap-1 text-xs font-heading transition-colors ${
             locked ? "text-brand-gold" : "text-brand-stone/40 hover:text-brand-stone/70"
           }`}
         >
-          {locked ? "🔒 Locked" : "🔓 Unlocked"}
+          {locked ? <IconLock size={13} /> : <IconUnlock size={13} />}
+          {locked ? "Locked" : "Unlocked"}
         </button>
       </div>
       <FieldInput field={field} />
