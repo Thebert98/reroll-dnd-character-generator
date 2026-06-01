@@ -28,6 +28,20 @@ class GenerateResponse(BaseModel):
     character: dict[str, Any]
     validation_errors: list[dict]
     run_id: str | None = None
+    version_id: str | None = None
+    version_number: int | None = None
+
+
+def _next_version_number(db, character_id: str) -> int:
+    res = (
+        db.table("character_versions")
+        .select("version_number")
+        .eq("character_id", character_id)
+        .order("version_number", desc=True)
+        .limit(1)
+        .execute()
+    )
+    return (res.data[0]["version_number"] + 1) if res.data else 1
 
 
 @router.post("/{character_id}/generate", response_model=GenerateResponse)
@@ -53,10 +67,27 @@ def generate(
         "id", character_id
     ).execute()
 
-    # Always record the trace.
+    # Snapshot this generation as an immutable version for history + diff.
+    version_id = None
+    version_number = _next_version_number(db, character_id)
+    ver = (
+        db.table("character_versions")
+        .insert(
+            {
+                "character_id": character_id,
+                "version_number": version_number,
+                "sheet": merged_dict,
+            }
+        )
+        .execute()
+    )
+    if ver.data:
+        version_id = ver.data[0]["id"]
+
+    # Always record the trace, linked to the version it produced.
     run_id = None
     run = db.table("generation_runs").insert(
-        trace.to_run_row(character_id)
+        trace.to_run_row(character_id, version_id)
     ).execute()
     if run.data:
         run_id = run.data[0]["id"]
@@ -65,4 +96,6 @@ def generate(
         character={**character, "sheet": merged_dict, "name": name},
         validation_errors=trace.validation_errors,
         run_id=run_id,
+        version_id=version_id,
+        version_number=version_number,
     )
