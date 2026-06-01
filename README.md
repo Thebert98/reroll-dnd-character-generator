@@ -5,9 +5,30 @@ fill in any subset of a character sheet, lock the fields you like, and the AI
 regenerates the rest using your locked fields as hard constraints. Grounded in
 SRD 5.1 rules via RAG, validated against those rules, and fully traceable.
 
-> Build status: **Phase 1 — Foundation** (auth, schema, character CRUD, lock UI).
-> Later phases add AI generation, the SRD validator, the trace viewer, RAG, and
-> an eval harness. See [`docs/`](docs/) and the project plan.
+> Build status: **shipped** — all six phases complete. Foundation → AI generation
+> + SRD validator → version history + trace viewer → RAG → split pipeline + eval
+> harness → polish (export, diff, share, rate limiting). See [`docs/`](docs/).
+
+<!-- Add a demo GIF here once recorded, e.g. docs/demo.gif. The trace viewer
+     (Sheet ▸ Trace tab) is the centerpiece to capture. -->
+<!-- Live demo: <your Vercel URL> · API: <your Railway URL> -->
+
+## Features
+
+- **Locked-field iteration** — every field is `{ value, locked, source }`; lock
+  what you love, regenerate the rest, never lose work. Locks are re-asserted
+  server-side, never trusted to the model.
+- **SRD validator** — pure-Python rules engine that rejects illegal characters
+  (legal class/race/background, ability ranges, spell-list + spell-level rules).
+- **Trace viewer** — per generation: locked constraints, retrieved SRD chunks
+  with scores, the assembled prompt, raw model output, pass/fail validation, the
+  five-step pipeline timeline, and token/cost/latency.
+- **RAG grounding** — hybrid (semantic + full-text, RRF) retrieval over SRD 5.1,
+  cited in the trace.
+- **Eval harness** — 15 cases + an assertion library; `passed/total` with a
+  committed baseline so prompt-change regressions are visible.
+- **Polish** — JSON/PDF export, version history + restore + diff, read-only
+  share links, per-user daily rate limiting, and "explain choices" (`source`).
 
 ## Why this exists
 
@@ -64,6 +85,49 @@ npm install
 # set VITE_* vars in a .env.local (see ../.env.example)
 npm run dev
 ```
+
+## Eval results
+
+The harness runs a fixed set of cases through the live pipeline and reports a
+pass rate. The committed baseline uses a deterministic, SRD-aware `stub` provider
+so it runs offline; point it at a real model to evaluate that model.
+
+```bash
+cd backend
+python evals/run_evals.py                      # offline baseline (stub)
+LLM_PROVIDER=openai python evals/run_evals.py  # evaluate gpt-4o-mini
+```
+
+Latest committed run: **15/15 passed** — full table in
+[`backend/evals/RESULTS.md`](backend/evals/RESULTS.md). Coverage: pure scratch
+generation, single/several locked fields, casters, non-casters, and illegal
+combinations the validator must catch.
+
+## Architecture
+
+See [`docs/architecture.md`](docs/architecture.md). The generation pipeline is
+five named, separately-traced steps —
+`analyze_intent → retrieve_rules → plan_fields → generate → validate` — kept
+deterministic and linear (no graph framework, by design).
+
+## Deployment
+
+- **Frontend** → Vercel (`frontend/`, SPA rewrite in `vercel.json`).
+- **Backend** → Railway (`backend/`, `railway.json` / `Procfile`).
+- **DB/Auth** → Supabase: run `supabase/migrations/*.sql` in order; enable the
+  `vector` extension; ingest the SRD with `scripts/ingest_srd.py`.
+
+Set env vars per [`.env.example`](.env.example).
+
+## Resume framing
+
+> Built a D&D character generator with locked-field iteration: users lock any
+> subset of fields and the AI regenerates the rest under SRD rule constraints.
+> Includes a validation layer that rejects illegal combinations, a RAG pipeline
+> grounding generations in CC-licensed SRD rules with citations, a trace viewer
+> exposing retrieved context and token usage per generation, and an eval harness
+> tracking prompt-change regressions. React, FastAPI, Supabase pgvector,
+> structured outputs.
 
 ## Attribution
 

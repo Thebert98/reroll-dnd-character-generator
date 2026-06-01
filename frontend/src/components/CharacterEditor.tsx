@@ -6,6 +6,7 @@ import { SHEET_FIELDS } from "../types";
 import type { ValidationError } from "../types";
 import { FieldRow } from "./FieldRow";
 import { VersionHistory } from "./VersionHistory";
+import { VersionDiff } from "./VersionDiff";
 import { TraceViewer } from "./TraceViewer";
 
 type Tab = "sheet" | "history" | "trace";
@@ -66,13 +67,27 @@ export function CharacterEditor() {
         <h2 className="text-2xl font-bold">
           {(character.sheet.name.value as string) || "Untitled"}
         </h2>
-        <button
-          className="rounded bg-slate-700 px-4 py-2 text-sm font-medium disabled:opacity-50"
-          onClick={save}
-          disabled={!dirty || saving}
-        >
-          {saving ? "Saving…" : dirty ? "Save" : "Saved"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="rounded border border-slate-700 px-3 py-2 text-sm hover:border-arcane"
+            onClick={() => api.download(character.id, "json")}
+          >
+            Export JSON
+          </button>
+          <button
+            className="rounded border border-slate-700 px-3 py-2 text-sm hover:border-arcane"
+            onClick={() => api.download(character.id, "pdf")}
+          >
+            Export PDF
+          </button>
+          <button
+            className="rounded bg-slate-700 px-4 py-2 text-sm font-medium disabled:opacity-50"
+            onClick={save}
+            disabled={!dirty || saving}
+          >
+            {saving ? "Saving…" : dirty ? "Save" : "Saved"}
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 rounded-lg border border-arcane/40 bg-arcane/5 p-4">
@@ -135,7 +150,15 @@ export function CharacterEditor() {
         </div>
       )}
       {tab === "history" && (
-        <VersionHistory key={refreshKey} characterId={character.id} />
+        <div className="space-y-8">
+          <VersionHistory key={refreshKey} characterId={character.id} />
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-slate-300">
+              Compare versions
+            </h3>
+            <VersionDiff key={`diff-${refreshKey}`} characterId={character.id} />
+          </div>
+        </div>
       )}
       {tab === "trace" && (
         <TraceViewer key={refreshKey} characterId={character.id} />
