@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import type { SharedVersion } from "../types";
 import { SheetView } from "../components/SheetView";
+import { Logo } from "../components/brand/Logo";
 
 /** Public, read-only page for a single character version. No auth required. */
 export function SharePage() {
@@ -21,15 +22,21 @@ export function SharePage() {
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-arcane">{data.character_name}</h1>
-        <p className="text-sm text-slate-500">
-          Shared character · version {data.version_number}
-        </p>
+      <div className="mb-8 flex items-end justify-between border-b border-ink-600/70 pb-4">
+        <div>
+          <h1 className="font-heading text-3xl font-bold text-brand-gold">
+            {data.character_name}
+          </h1>
+          <p className="text-sm text-brand-stone/50">
+            Shared character · version {data.version_number}
+          </p>
+        </div>
+        <Logo size="sm" to="/" />
       </div>
       <SheetView sheet={data.sheet} />
-      <footer className="mt-8 text-center text-xs text-slate-500">
-        Made with Arcane Architect · SRD 5.1 (CC-BY-4.0)
+      <footer className="mt-10 flex flex-col items-center gap-2 text-center text-xs text-brand-stone/40">
+        <Logo size="sm" showSubtitle={false} />
+        <span>Made with Re:Roll · SRD 5.1 (CC-BY-4.0)</span>
       </footer>
     </div>
   );
