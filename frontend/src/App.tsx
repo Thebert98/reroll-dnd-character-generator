@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate, Link } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
 import { Auth } from "./components/Auth";
 import { CharacterList } from "./components/CharacterList";
 import { CharacterEditor } from "./components/CharacterEditor";
 import { SharePage } from "./pages/SharePage";
+import { Logo } from "./components/brand/Logo";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -39,12 +40,10 @@ export default function App() {
 function AppShell() {
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-        <Link to="/" className="text-xl font-bold text-arcane">
-          ⚔ Arcane Architect
-        </Link>
+      <header className="flex items-center justify-between border-b border-ink-600/70 bg-ink-900/80 px-6 py-3 backdrop-blur">
+        <Logo size="sm" to="/" />
         <button
-          className="text-sm text-slate-400 hover:text-slate-100"
+          className="font-heading text-sm text-brand-stone/60 transition-colors hover:text-brand-gold"
           onClick={() => supabase.auth.signOut()}
         >
           Sign out
@@ -57,8 +56,10 @@ function AppShell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <footer className="px-6 py-8 text-center text-xs text-slate-500">
-        Grounded in the Systems Reference Document 5.1, © Wizards of the Coast,
+      <footer className="px-6 py-10 text-center font-heading text-xs text-brand-stone/40">
+        <span className="text-brand-gold/70">Roll your legend. Build your story.</span>
+        <br />
+        Grounded in the System Reference Document 5.1, © Wizards of the Coast,
         licensed under CC-BY-4.0.
       </footer>
     </div>
