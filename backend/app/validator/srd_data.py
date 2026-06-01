@@ -1,0 +1,167 @@
+"""Curated SRD 5.1 reference data used by the rules validator.
+
+This is a deliberately compact, hand-checked subset — enough to enforce the
+high-value rules (legal classes/races/backgrounds, ability ranges, and "this
+spell isn't on your class list / is too high level for you"). Phase 4 adds RAG
+grounding over the *full* SRD; this table stays the authority for hard rules
+because a validator must be deterministic, not retrieved.
+
+All content is from the System Reference Document 5.1 (CC-BY-4.0).
+"""
+from __future__ import annotations
+
+ABILITIES = ["str", "dex", "con", "int", "wis", "cha"]
+
+# Proficiency bonus by character level (SRD, levels 1-20).
+def proficiency_bonus(level: int) -> int:
+    return 2 + (max(1, min(level, 20)) - 1) // 4
+
+
+# ---------------------------------------------------------------------------
+# Classes and their spellcasting profile.
+#   caster: "full" | "half" | "third" | "none"
+#   ability: spellcasting ability, or None
+#   prepared: True if the class prepares spells (Cleric/Druid/Paladin/Wizard)
+# ---------------------------------------------------------------------------
+CLASSES: dict[str, dict] = {
+    "Barbarian": {"caster": "none", "ability": None},
+    "Bard": {"caster": "full", "ability": "cha", "prepared": False},
+    "Cleric": {"caster": "full", "ability": "wis", "prepared": True},
+    "Druid": {"caster": "full", "ability": "wis", "prepared": True},
+    "Fighter": {"caster": "none", "ability": None},
+    "Monk": {"caster": "none", "ability": None},
+    "Paladin": {"caster": "half", "ability": "cha", "prepared": True},
+    "Ranger": {"caster": "half", "ability": "wis", "prepared": False},
+    "Rogue": {"caster": "none", "ability": None},
+    "Sorcerer": {"caster": "full", "ability": "cha", "prepared": False},
+    "Warlock": {"caster": "pact", "ability": "cha", "prepared": False},
+    "Wizard": {"caster": "full", "ability": "int", "prepared": True},
+}
+
+# Full-caster spell slots per character level (index 0 == 1st-level slots).
+FULL_CASTER_SLOTS: dict[int, list[int]] = {
+    1: [2], 2: [3], 3: [4, 2], 4: [4, 3], 5: [4, 3, 2],
+    6: [4, 3, 3], 7: [4, 3, 3, 1], 8: [4, 3, 3, 2], 9: [4, 3, 3, 3, 1],
+    10: [4, 3, 3, 3, 2], 11: [4, 3, 3, 3, 2, 1], 12: [4, 3, 3, 3, 2, 1],
+    13: [4, 3, 3, 3, 2, 1, 1], 14: [4, 3, 3, 3, 2, 1, 1],
+    15: [4, 3, 3, 3, 2, 1, 1, 1], 16: [4, 3, 3, 3, 2, 1, 1, 1],
+    17: [4, 3, 3, 3, 2, 1, 1, 1, 1], 18: [4, 3, 3, 3, 3, 1, 1, 1, 1],
+    19: [4, 3, 3, 3, 3, 2, 1, 1, 1], 20: [4, 3, 3, 3, 3, 2, 2, 1, 1],
+}
+
+
+def max_spell_level(char_class: str, level: int) -> int:
+    """Highest spell level the character can cast (0 == cantrips only)."""
+    cls = CLASSES.get(char_class)
+    if not cls or cls["caster"] == "none":
+        return -1  # non-caster: no spells at all
+    caster = cls["caster"]
+    if caster == "full":
+        slots = FULL_CASTER_SLOTS.get(max(1, min(level, 20)), [])
+        return len(slots)
+    if caster == "half":
+        # Half casters start at level 2; effective slot level rounds down.
+        eff = (level + 1) // 2 if level >= 2 else 0
+        slots = FULL_CASTER_SLOTS.get(max(1, eff), []) if eff else []
+        return len(slots)
+    if caster == "pact":  # Warlock: pact magic, capped at 5th by level 9
+        return min(5, (level + 1) // 2)
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Spell registry: name -> { level, classes }. Level 0 == cantrip.
+# A representative SRD subset spanning every caster class; enough to enforce
+# class-list and spell-level rules and to catch the canonical illegal cases.
+# ---------------------------------------------------------------------------
+SPELLS: dict[str, dict] = {
+    # Cantrips
+    "Fire Bolt": {"level": 0, "classes": {"Sorcerer", "Wizard"}},
+    "Ray of Frost": {"level": 0, "classes": {"Sorcerer", "Wizard"}},
+    "Mage Hand": {"level": 0, "classes": {"Bard", "Sorcerer", "Warlock", "Wizard"}},
+    "Prestidigitation": {"level": 0, "classes": {"Bard", "Sorcerer", "Warlock", "Wizard"}},
+    "Sacred Flame": {"level": 0, "classes": {"Cleric"}},
+    "Guidance": {"level": 0, "classes": {"Cleric", "Druid"}},
+    "Druidcraft": {"level": 0, "classes": {"Druid"}},
+    "Produce Flame": {"level": 0, "classes": {"Druid"}},
+    "Shillelagh": {"level": 0, "classes": {"Druid"}},
+    "Vicious Mockery": {"level": 0, "classes": {"Bard"}},
+    "Eldritch Blast": {"level": 0, "classes": {"Warlock"}},
+    # 1st level
+    "Magic Missile": {"level": 1, "classes": {"Sorcerer", "Wizard"}},
+    "Shield": {"level": 1, "classes": {"Sorcerer", "Wizard"}},
+    "Burning Hands": {"level": 1, "classes": {"Sorcerer", "Wizard"}},
+    "Cure Wounds": {"level": 1, "classes": {"Bard", "Cleric", "Druid", "Paladin", "Ranger"}},
+    "Healing Word": {"level": 1, "classes": {"Bard", "Cleric", "Druid"}},
+    "Bless": {"level": 1, "classes": {"Cleric", "Paladin"}},
+    "Entangle": {"level": 1, "classes": {"Druid"}},
+    "Faerie Fire": {"level": 1, "classes": {"Bard", "Druid"}},
+    "Thunderwave": {"level": 1, "classes": {"Bard", "Druid", "Sorcerer", "Wizard"}},
+    "Hex": {"level": 1, "classes": {"Warlock"}},
+    "Hunters Mark": {"level": 1, "classes": {"Ranger"}},
+    # 2nd level
+    "Misty Step": {"level": 2, "classes": {"Sorcerer", "Warlock", "Wizard"}},
+    "Scorching Ray": {"level": 2, "classes": {"Sorcerer", "Wizard"}},
+    "Spiritual Weapon": {"level": 2, "classes": {"Cleric"}},
+    "Hold Person": {"level": 2, "classes": {"Bard", "Cleric", "Druid", "Sorcerer", "Warlock", "Wizard"}},
+    "Moonbeam": {"level": 2, "classes": {"Druid"}},
+    "Lesser Restoration": {"level": 2, "classes": {"Bard", "Cleric", "Druid", "Paladin", "Ranger"}},
+    # 3rd level
+    "Fireball": {"level": 3, "classes": {"Sorcerer", "Wizard"}},
+    "Counterspell": {"level": 3, "classes": {"Sorcerer", "Warlock", "Wizard"}},
+    "Fly": {"level": 3, "classes": {"Sorcerer", "Warlock", "Wizard"}},
+    "Call Lightning": {"level": 3, "classes": {"Druid"}},
+    "Dispel Magic": {"level": 3, "classes": {"Bard", "Cleric", "Druid", "Paladin", "Sorcerer", "Warlock", "Wizard"}},
+    "Revivify": {"level": 3, "classes": {"Cleric", "Paladin"}},
+    "Spirit Guardians": {"level": 3, "classes": {"Cleric"}},
+    # 4th-5th level (samples for higher-level characters)
+    "Polymorph": {"level": 4, "classes": {"Bard", "Druid", "Sorcerer", "Wizard"}},
+    "Ice Storm": {"level": 4, "classes": {"Druid", "Sorcerer", "Wizard"}},
+    "Greater Invisibility": {"level": 4, "classes": {"Bard", "Sorcerer", "Wizard"}},
+    "Cone of Cold": {"level": 5, "classes": {"Sorcerer", "Wizard"}},
+    "Mass Cure Wounds": {"level": 5, "classes": {"Bard", "Cleric", "Druid"}},
+    "Flame Strike": {"level": 5, "classes": {"Cleric"}},
+}
+
+
+def class_spell_list(char_class: str) -> set[str]:
+    return {name for name, d in SPELLS.items() if char_class in d["classes"]}
+
+
+# ---------------------------------------------------------------------------
+# Races: ability score increases. (SRD subset.)
+# ---------------------------------------------------------------------------
+RACES: dict[str, dict[str, int]] = {
+    "Hill Dwarf": {"con": 2, "wis": 1},
+    "Mountain Dwarf": {"con": 2, "str": 2},
+    "High Elf": {"dex": 2, "int": 1},
+    "Wood Elf": {"dex": 2, "wis": 1},
+    "Elf": {"dex": 2},
+    "Dwarf": {"con": 2},
+    "Lightfoot Halfling": {"dex": 2, "cha": 1},
+    "Halfling": {"dex": 2},
+    "Human": {"str": 1, "dex": 1, "con": 1, "int": 1, "wis": 1, "cha": 1},
+    "Dragonborn": {"str": 2, "cha": 1},
+    "Gnome": {"int": 2},
+    "Half-Elf": {"cha": 2},
+    "Half-Orc": {"str": 2, "con": 1},
+    "Tiefling": {"int": 1, "cha": 2},
+}
+
+# ---------------------------------------------------------------------------
+# Backgrounds: granted skill proficiencies. (SRD subset.)
+# ---------------------------------------------------------------------------
+BACKGROUNDS: dict[str, list[str]] = {
+    "Acolyte": ["Insight", "Religion"],
+    "Criminal": ["Deception", "Stealth"],
+    "Folk Hero": ["Animal Handling", "Survival"],
+    "Noble": ["History", "Persuasion"],
+    "Sage": ["Arcana", "History"],
+    "Soldier": ["Athletics", "Intimidation"],
+    "Charlatan": ["Deception", "Sleight of Hand"],
+    "Entertainer": ["Acrobatics", "Performance"],
+    "Guild Artisan": ["Insight", "Persuasion"],
+    "Hermit": ["Medicine", "Religion"],
+    "Outlander": ["Athletics", "Survival"],
+    "Urchin": ["Sleight of Hand", "Stealth"],
+}

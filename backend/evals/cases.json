@@ -1,0 +1,123 @@
+[
+  {
+    "name": "pure scratch generation",
+    "input": {},
+    "assertions": ["validator_passes", "all_unlocked_filled"]
+  },
+  {
+    "name": "single locked field: Druid",
+    "input": { "char_class": { "value": "Druid", "locked": true } },
+    "assertions": ["validator_passes", "locked_fields_unchanged", "spells_are_class_legal"]
+  },
+  {
+    "name": "several locked: Wizard 5 / High Elf",
+    "input": {
+      "char_class": { "value": "Wizard", "locked": true },
+      "level": { "value": 5, "locked": true },
+      "race": { "value": "High Elf", "locked": true }
+    },
+    "assertions": ["validator_passes", "locked_fields_unchanged", "spells_within_cap"]
+  },
+  {
+    "name": "caster: Cleric level 3",
+    "input": {
+      "char_class": { "value": "Cleric", "locked": true },
+      "level": { "value": 3, "locked": true }
+    },
+    "assertions": ["validator_passes", "spells_are_class_legal", "caster_has_spells"]
+  },
+  {
+    "name": "non-caster: Fighter level 4",
+    "input": {
+      "char_class": { "value": "Fighter", "locked": true },
+      "level": { "value": 4, "locked": true }
+    },
+    "assertions": ["validator_passes", "non_caster_has_no_spells"]
+  },
+  {
+    "name": "illegal locked combo: Druid with Fireball",
+    "input": {
+      "char_class": { "value": "Druid", "locked": true },
+      "level": { "value": 5, "locked": true },
+      "spells": { "value": ["Fireball"], "locked": true }
+    },
+    "assertions": ["validator_catches_error", "locked_fields_unchanged"]
+  },
+  {
+    "name": "level 5 druid, race locked to elf",
+    "input": {
+      "char_class": { "value": "Druid", "locked": true },
+      "level": { "value": 5, "locked": true },
+      "race": { "value": "Wood Elf", "locked": true }
+    },
+    "assertions": ["validator_passes", "spells_are_class_legal", "spells_within_cap"]
+  },
+  {
+    "name": "high level caster: Wizard 11",
+    "input": {
+      "char_class": { "value": "Wizard", "locked": true },
+      "level": { "value": 11, "locked": true }
+    },
+    "assertions": ["validator_passes", "spells_are_class_legal", "spells_within_cap"]
+  },
+  {
+    "name": "Sorcerer level 1",
+    "input": {
+      "char_class": { "value": "Sorcerer", "locked": true },
+      "level": { "value": 1, "locked": true }
+    },
+    "assertions": ["validator_passes", "spells_within_cap"]
+  },
+  {
+    "name": "Bard level 2",
+    "input": {
+      "char_class": { "value": "Bard", "locked": true },
+      "level": { "value": 2, "locked": true }
+    },
+    "assertions": ["validator_passes", "spells_are_class_legal"]
+  },
+  {
+    "name": "Paladin level 5 (half caster)",
+    "input": {
+      "char_class": { "value": "Paladin", "locked": true },
+      "level": { "value": 5, "locked": true }
+    },
+    "assertions": ["validator_passes", "spells_within_cap"]
+  },
+  {
+    "name": "Ranger level 2 (half caster)",
+    "input": {
+      "char_class": { "value": "Ranger", "locked": true },
+      "level": { "value": 2, "locked": true }
+    },
+    "assertions": ["validator_passes"]
+  },
+  {
+    "name": "Barbarian level 1 (non-caster)",
+    "input": {
+      "char_class": { "value": "Barbarian", "locked": true },
+      "level": { "value": 1, "locked": true }
+    },
+    "assertions": ["validator_passes", "non_caster_has_no_spells"]
+  },
+  {
+    "name": "locked stats + class are preserved",
+    "input": {
+      "char_class": { "value": "Rogue", "locked": true },
+      "stats": {
+        "value": { "str": 8, "dex": 15, "con": 14, "int": 13, "wis": 12, "cha": 10 },
+        "locked": true
+      }
+    },
+    "assertions": ["validator_passes", "locked_fields_unchanged"]
+  },
+  {
+    "name": "illegal locked combo: Fighter with Magic Missile",
+    "input": {
+      "char_class": { "value": "Fighter", "locked": true },
+      "level": { "value": 3, "locked": true },
+      "spells": { "value": ["Magic Missile"], "locked": true }
+    },
+    "assertions": ["validator_catches_error"]
+  }
+]
