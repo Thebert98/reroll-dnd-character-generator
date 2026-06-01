@@ -57,7 +57,9 @@ function AppShell() {
         </Routes>
       </main>
       <footer className="px-6 py-10 text-center font-heading text-xs text-brand-stone/40">
-        <span className="text-brand-gold/70">Roll your legend. Build your story.</span>
+        <span className="font-display tracking-widest text-brand-gold/80">
+          Roll. Create. Adventure.
+        </span>
         <br />
         Grounded in the System Reference Document 5.1, © Wizards of the Coast,
         licensed under CC-BY-4.0.

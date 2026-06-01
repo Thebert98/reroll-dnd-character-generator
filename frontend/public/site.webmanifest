@@ -1,11 +1,11 @@
 {
   "name": "Re:Roll — Character Builder",
   "short_name": "Re:Roll",
-  "description": "AI-powered D&D character builder. Roll your legend. Build your story.",
+  "description": "The AI-powered fantasy character builder for tabletop RPG adventurers. Roll. Create. Adventure.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B1118",
-  "theme_color": "#0B1118",
+  "background_color": "#1E1A17",
+  "theme_color": "#1E1A17",
   "icons": [
     {
       "src": "/favicon.svg",

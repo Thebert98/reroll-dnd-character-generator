@@ -23,25 +23,25 @@ export function D20({
     >
       <defs>
         <radialGradient id={id} cx="50%" cy="38%" r="75%">
-          <stop offset="0%" stopColor="#E03A3A" />
-          <stop offset="55%" stopColor="#B71A1A" />
-          <stop offset="100%" stopColor="#5E0E0E" />
+          <stop offset="0%" stopColor="#9E2A2F" />
+          <stop offset="55%" stopColor="#7A1F23" />
+          <stop offset="100%" stopColor="#3E1012" />
         </radialGradient>
       </defs>
-      {withBackground && <rect width="100" height="100" rx="22" fill="#0B1118" />}
+      {withBackground && <rect width="100" height="100" rx="22" fill="#1E1A17" />}
       <g transform="translate(0,2)">
         <path
           d="M50 6 L88 28 L88 70 L50 92 L12 70 L12 28 Z"
           fill={`url(#${id})`}
-          stroke="#D4AF37"
+          stroke="#D8BA1F"
           strokeWidth={3}
           strokeLinejoin="round"
         />
         <g
           fill="none"
-          stroke="#D4AF37"
+          stroke="#E6C36B"
           strokeWidth={1.6}
-          strokeOpacity={0.7}
+          strokeOpacity={0.75}
           strokeLinejoin="round"
         >
           <path d="M30 40 L70 40 L50 80 Z" />
@@ -53,10 +53,10 @@ export function D20({
           x={50}
           y={52}
           textAnchor="middle"
-          fontFamily='"Cinzel", Georgia, serif'
+          fontFamily='"IM Fell English SC", Georgia, serif'
           fontWeight={700}
           fontSize={24}
-          fill="#F4E7C6"
+          fill="#FFF3D6"
         >
           {value}
         </text>
