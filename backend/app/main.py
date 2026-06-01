@@ -16,9 +16,12 @@ app = FastAPI(title="Re:Roll Character Builder API", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# FRONTEND_ORIGIN can be a comma-separated list — production Vercel,
+# the tavern app, localhost during dev, etc.
+_allowed_origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
