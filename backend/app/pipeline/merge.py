@@ -14,6 +14,15 @@ def unlocked_field_names(sheet: CharacterSheet) -> List[str]:
     return [f for f in SHEET_FIELDS if not getattr(sheet, f).locked]
 
 
+def locked_value_summary(sheet: CharacterSheet) -> dict:
+    """Locked field -> value, for the analyze_intent trace step."""
+    return {
+        f: getattr(sheet, f).value
+        for f in SHEET_FIELDS
+        if getattr(sheet, f).locked
+    }
+
+
 def merge_preserving_locks(original: CharacterSheet, raw: dict) -> CharacterSheet:
     """Return a new sheet where unlocked fields take the model's values and
     locked fields keep their original values no matter what the model returned.

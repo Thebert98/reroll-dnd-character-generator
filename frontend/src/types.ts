@@ -68,6 +68,12 @@ export interface RetrievedChunk {
   score?: number;
 }
 
+export interface PipelineStep {
+  name: string;
+  detail: Record<string, unknown>;
+  duration_ms: number;
+}
+
 export interface TraceRun extends RunSummary {
   input_snapshot: Record<string, unknown>;
   retrieved_chunks?: RetrievedChunk[] | null;
@@ -75,6 +81,7 @@ export interface TraceRun extends RunSummary {
   raw_output?: Record<string, unknown> | null;
   input_tokens?: number | null;
   output_tokens?: number | null;
+  steps?: PipelineStep[] | null;
 }
 
 export const SHEET_FIELDS: (keyof CharacterSheet)[] = [
