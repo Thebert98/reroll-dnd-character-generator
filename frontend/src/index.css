@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-slate-950 text-slate-100;
+:root {
+  /* Arcane pattern is wired in PR2 (brand assets); declared here so the
+     bg-arcane utility resolves to "nothing" until then. */
+  --rr-arcane-pattern: none;
+}
+
+@layer base {
+  html {
+    @apply font-body;
+  }
+  body {
+    @apply bg-ink-900 text-stone-200 antialiased;
+    color: #e7e6df; /* Stone-tinted body text */
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+  }
+  /* Cinzel for true display / logo moments via .font-display. */
 }
