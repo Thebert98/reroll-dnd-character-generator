@@ -13,8 +13,9 @@ from pydantic import BaseModel
 
 from ..auth import CurrentUser, get_current_user
 from ..db import user_client
-from ..models import sheet_from_dict
+from ..models import CharacterSheet, sheet_from_dict
 from ..pipeline import generate_character
+from ..rag import build_retrieval_query, retrieve_rules
 
 router = APIRouter(prefix="/characters", tags=["generate"])
 
@@ -58,7 +59,14 @@ def generate(
     character = res.data[0]
 
     sheet = sheet_from_dict(character["sheet"])
-    merged, trace = generate_character(sheet, body.user_notes, model=body.model)
+
+    # Ground generation in the SRD corpus via the user's RLS-scoped client.
+    def retriever(s: CharacterSheet, notes: str) -> list[dict]:
+        return retrieve_rules(build_retrieval_query(s, notes), db, k=6)
+
+    merged, trace = generate_character(
+        sheet, body.user_notes, model=body.model, retriever=retriever
+    )
 
     merged_dict = merged.model_dump(by_alias=True)
     # Persist the new sheet. Name field, if generated/locked, becomes the title.

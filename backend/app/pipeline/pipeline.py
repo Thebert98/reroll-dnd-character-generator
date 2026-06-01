@@ -9,12 +9,17 @@ public signature stays stable so the API and evals don't churn.
 """
 from __future__ import annotations
 
+from typing import Callable
+
 from ..llm import generate_structured
 from ..models import CharacterSheet
 from ..models.trace import Trace
 from ..validator import validate
 from .merge import merge_preserving_locks, unlocked_field_names
 from .prompt import SYSTEM, build_schema, build_user_prompt
+
+# A retriever takes (sheet, user_notes) and returns SRD chunks for grounding.
+Retriever = Callable[[CharacterSheet, str], list[dict]]
 
 
 def generate_character(
@@ -23,8 +28,14 @@ def generate_character(
     *,
     model: str | None = None,
     retrieved_chunks: list[dict] | None = None,
+    retriever: Retriever | None = None,
 ) -> tuple[CharacterSheet, Trace]:
     trace = Trace.start(sheet)
+
+    # Ground the generation in retrieved SRD rules (Phase 4). Injected so the
+    # pipeline stays decoupled from the database and testable in isolation.
+    if retrieved_chunks is None and retriever is not None:
+        retrieved_chunks = retriever(sheet, user_notes)
 
     unlocked = unlocked_field_names(sheet)
     if not unlocked:
