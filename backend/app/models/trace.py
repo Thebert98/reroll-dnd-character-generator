@@ -84,4 +84,5 @@ class Trace:
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
             "cost_usd": self.cost_usd,
+            "steps": [s.__dict__ for s in self.steps],
         }

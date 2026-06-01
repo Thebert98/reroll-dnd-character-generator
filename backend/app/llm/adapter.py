@@ -46,6 +46,10 @@ def generate_structured(
         from .anthropic_provider import complete
     elif provider == "openai":
         from .openai_provider import complete
+    elif provider == "stub":
+        # Deterministic, SRD-aware baseline — used by the eval harness and for
+        # offline local development. No API key required.
+        from .stub_provider import complete
     else:
         raise ValueError(f"Unknown LLM_PROVIDER: {settings.llm_provider}")
     return complete(system=system, user=user, schema=schema, model=model)

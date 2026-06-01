@@ -88,6 +88,28 @@ function TraceDetail({ run }: { run: TraceRun }) {
         <span>cost: ${run.cost_usd ?? 0}</span>
       </div>
 
+      <Section title={`Pipeline steps (${run.steps?.length ?? 0})`}>
+        {run.steps?.length ? (
+          <ol className="space-y-1">
+            {run.steps.map((s, i) => (
+              <li key={i} className="rounded bg-slate-900 p-2">
+                <div className="flex justify-between text-slate-300">
+                  <span className="font-mono">
+                    {i + 1}. {s.name}
+                  </span>
+                  <span className="text-slate-500">{s.duration_ms}ms</span>
+                </div>
+                <pre className="mt-1 max-h-32 overflow-auto text-[11px] text-slate-400">
+                  {JSON.stringify(s.detail, null, 2)}
+                </pre>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <span className="text-slate-500">no step trace</span>
+        )}
+      </Section>
+
       <Section title={`Locked fields (${run.locked_fields.length})`}>
         {run.locked_fields.length ? (
           <div className="flex flex-wrap gap-1">

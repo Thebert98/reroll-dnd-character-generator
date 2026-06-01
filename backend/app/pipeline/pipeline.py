@@ -1,25 +1,31 @@
-"""Phase-2 generation pipeline: a single linear pass.
+"""The generation pipeline: five named, separately-traced steps.
 
-    sheet ──> build prompt ──> LLM (structured) ──> merge (preserve locks)
-          ──> validate ──> (sheet, trace)
+    analyze_intent → retrieve_rules → plan_fields → generate → validate
 
-Phase 5 splits this into named, separately-traced steps
-(analyze_intent → retrieve_rules → plan_fields → generate → validate). The
-public signature stays stable so the API and evals don't churn.
+Each step appends to the Trace, which becomes one ``generation_runs`` row. The
+flow is deterministic and linear (no cycles, no dynamic routing), so a graph
+framework would add weight with no benefit. The public signature is unchanged
+from earlier phases so the API and evals don't churn.
 """
 from __future__ import annotations
 
+import time
 from typing import Callable
 
-from ..llm import generate_structured
 from ..models import CharacterSheet
 from ..models.trace import Trace
+from ..rag import build_retrieval_query
 from ..validator import validate
-from .merge import merge_preserving_locks, unlocked_field_names
-from .prompt import SYSTEM, build_schema, build_user_prompt
+from .merge import locked_value_summary, merge_preserving_locks
+from .steps import analyze_intent, generate_fields, plan_fields
 
-# A retriever takes (sheet, user_notes) and returns SRD chunks for grounding.
-Retriever = Callable[[CharacterSheet, str], list[dict]]
+# A retriever takes a query string and returns SRD chunks. Injected so the
+# pipeline stays decoupled from the database and testable in isolation.
+Retriever = Callable[[str], list[dict]]
+
+
+def _ms(t0: float) -> int:
+    return int((time.perf_counter() - t0) * 1000)
 
 
 def generate_character(
@@ -32,28 +38,75 @@ def generate_character(
 ) -> tuple[CharacterSheet, Trace]:
     trace = Trace.start(sheet)
 
-    # Ground the generation in retrieved SRD rules (Phase 4). Injected so the
-    # pipeline stays decoupled from the database and testable in isolation.
-    if retrieved_chunks is None and retriever is not None:
-        retrieved_chunks = retriever(sheet, user_notes)
+    # 1. analyze_intent — deterministic; extract locks + infer theme.
+    t = time.perf_counter()
+    intent = analyze_intent(sheet, user_notes)
+    trace.add_step(
+        "analyze_intent",
+        {
+            "locked_fields": intent.locked_fields,
+            "unlocked_fields": intent.unlocked_fields,
+            "theme": intent.theme,
+            "locked_values": locked_value_summary(sheet),
+        },
+        _ms(t),
+    )
 
-    unlocked = unlocked_field_names(sheet)
-    if not unlocked:
-        # Everything is locked; nothing to generate. Still validate + trace.
+    # 2. retrieve_rules — hybrid search over the SRD corpus (if a retriever exists).
+    query = build_retrieval_query(sheet, user_notes)
+    if retrieved_chunks is None and retriever is not None:
+        t = time.perf_counter()
+        retrieved_chunks = retriever(query)
+        trace.add_step(
+            "retrieve_rules",
+            {
+                "query": query,
+                "chunk_count": len(retrieved_chunks),
+                "sections": [c.get("section") for c in retrieved_chunks],
+            },
+            _ms(t),
+        )
+    retrieved_chunks = retrieved_chunks or []
+
+    # 3. plan_fields — order the unlocked fields by dependency (stats before spells).
+    t = time.perf_counter()
+    plan = plan_fields(sheet, intent)
+    trace.add_step("plan_fields", {"order": plan}, _ms(t))
+
+    if not plan:
+        # Everything locked; nothing to generate. Still validate + trace.
         errors = [e.model_dump() for e in validate(sheet)]
-        trace.finish(model=model or "none", validation_errors=errors)
+        trace.add_step("validate", {"error_count": len(errors)}, 0)
+        trace.finish(
+            model=model or "none",
+            retrieved_chunks=retrieved_chunks,
+            validation_errors=errors,
+        )
         return sheet, trace
 
-    schema = build_schema(unlocked)
-    prompt = build_user_prompt(sheet, unlocked, user_notes, retrieved_chunks)
-
-    result = generate_structured(SYSTEM, prompt, schema, model=model)
+    # 4. generate — one structured-output LLM call.
+    t = time.perf_counter()
+    result, prompt = generate_fields(sheet, retrieved_chunks, plan, user_notes, model)
+    trace.add_step(
+        "generate",
+        {
+            "model": result.model,
+            "input_tokens": result.input_tokens,
+            "output_tokens": result.output_tokens,
+            "fields_returned": list(result.data.keys()),
+        },
+        _ms(t),
+    )
     merged = merge_preserving_locks(sheet, result.data)
+
+    # 5. validate — pure-Python SRD rules check.
+    t = time.perf_counter()
     errors = [e.model_dump() for e in validate(merged)]
+    trace.add_step("validate", {"error_count": len(errors), "errors": errors}, _ms(t))
 
     trace.finish(
         model=result.model,
-        prompt=f"SYSTEM:\n{SYSTEM}\n\nUSER:\n{prompt}",
+        prompt=prompt,
         retrieved_chunks=retrieved_chunks,
         raw_output=result.data,
         validation_errors=errors,
