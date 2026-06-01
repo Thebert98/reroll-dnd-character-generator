@@ -12,11 +12,10 @@ export function Auth() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const fn =
+    const { error } =
       mode === "signin"
-        ? supabase.auth.signInWithPassword
-        : supabase.auth.signUp;
-    const { error } = await fn({ email, password });
+        ? await supabase.auth.signInWithPassword({ email, password })
+        : await supabase.auth.signUp({ email, password });
     if (error) setError(error.message);
     else if (mode === "signup") setSent(true);
   }

@@ -4,9 +4,7 @@ Loads the character, runs the generation pipeline (locks respected), persists
 the merged sheet, and writes a ``generation_runs`` row for every call (even
 failed validations). Returns the updated character plus validation errors.
 """
-from __future__ import annotations
-
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -23,15 +21,15 @@ router = APIRouter(prefix="/characters", tags=["generate"])
 
 class GenerateRequest(BaseModel):
     user_notes: str = ""
-    model: str | None = None
+    model: Optional[str] = None
 
 
 class GenerateResponse(BaseModel):
     character: dict[str, Any]
     validation_errors: list[dict]
-    run_id: str | None = None
-    version_id: str | None = None
-    version_number: int | None = None
+    run_id: Optional[str] = None
+    version_id: Optional[str] = None
+    version_number: Optional[int] = None
 
 
 def _next_version_number(db, character_id: str) -> int:
