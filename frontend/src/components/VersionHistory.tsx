@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useEditor } from "../store";
 import type { CharacterVersion } from "../types";
+import { Button } from "./ui/Button";
 
 export function VersionHistory({ characterId }: { characterId: string }) {
   const [versions, setVersions] = useState<CharacterVersion[]>([]);
@@ -32,33 +33,33 @@ export function VersionHistory({ characterId }: { characterId: string }) {
       {versions.map((v) => (
         <li
           key={v.id}
-          className="flex items-center justify-between rounded border border-slate-800 px-3 py-2 text-sm"
+          className="flex items-center justify-between rounded-lg border border-ink-600/80 bg-ink-700/40 px-3 py-2 text-sm"
         >
           <div>
-            <span className="font-medium">v{v.version_number}</span>{" "}
-            <span className="text-slate-500">
+            <span className="font-heading font-semibold text-brand-gold">
+              v{v.version_number}
+            </span>{" "}
+            <span className="text-brand-stone/60">
               {(v.sheet.char_class?.value as string) || "—"} ·{" "}
               {(v.sheet.race?.value as string) || "—"} · L
               {(v.sheet.level?.value as number) || "?"}
             </span>
-            <div className="text-xs text-slate-600">
+            <div className="text-xs text-brand-stone/35">
               {v.created_at?.slice(0, 19).replace("T", " ")}
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-arcane"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => copyShareLink(v.id)}
               title="Copy a public read-only link to this version"
             >
               Share
-            </button>
-            <button
-              className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-arcane"
-              onClick={() => restore(v.version_number)}
-            >
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => restore(v.version_number)}>
               Restore
-            </button>
+            </Button>
           </div>
         </li>
       ))}

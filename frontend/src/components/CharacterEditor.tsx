@@ -8,6 +8,7 @@ import { FieldRow } from "./FieldRow";
 import { VersionHistory } from "./VersionHistory";
 import { VersionDiff } from "./VersionDiff";
 import { TraceViewer } from "./TraceViewer";
+import { Button } from "./ui/Button";
 
 type Tab = "sheet" | "history" | "trace";
 
@@ -64,61 +65,52 @@ export function CharacterEditor() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">
+        <h2 className="font-heading text-2xl font-bold text-brand-stone">
           {(character.sheet.name.value as string) || "Untitled"}
         </h2>
         <div className="flex items-center gap-2">
-          <button
-            className="rounded border border-slate-700 px-3 py-2 text-sm hover:border-arcane"
-            onClick={() => api.download(character.id, "json")}
-          >
+          <Button variant="secondary" size="sm" onClick={() => api.download(character.id, "json")}>
             Export JSON
-          </button>
-          <button
-            className="rounded border border-slate-700 px-3 py-2 text-sm hover:border-arcane"
-            onClick={() => api.download(character.id, "pdf")}
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => api.download(character.id, "pdf")}>
             Export PDF
-          </button>
-          <button
-            className="rounded bg-slate-700 px-4 py-2 text-sm font-medium disabled:opacity-50"
+          </Button>
+          <Button
+            variant={dirty ? "primary" : "secondary"}
             onClick={save}
             disabled={!dirty || saving}
           >
             {saving ? "Saving…" : dirty ? "Save" : "Saved"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="mb-6 rounded-lg border border-arcane/40 bg-arcane/5 p-4">
-        <p className="mb-2 text-sm text-slate-300">
-          Lock the fields you want to keep, then regenerate the rest.
+      <div className="mb-6 rounded-xl border border-brand-arcane/40 bg-brand-arcane/5 p-4">
+        <p className="mb-2 font-heading text-sm text-brand-stone/80">
+          🔒 Lock the fields you want to keep, then{" "}
+          <span className="text-brand-gold">re-roll</span> the rest.
         </p>
         <textarea
-          className="mb-2 w-full rounded bg-slate-900 px-3 py-2 text-sm"
+          className="mb-3 w-full rounded-lg border border-ink-600 bg-ink-900 px-3 py-2 text-sm outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/60"
           rows={2}
           placeholder="Optional theme / notes (e.g. 'a grim swamp witch who fears fire')"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
-        <button
-          className="rounded bg-arcane px-4 py-2 font-medium disabled:opacity-50"
-          onClick={generate}
-          disabled={generating}
-        >
-          {generating ? "Conjuring…" : "✨ Generate unlocked fields"}
-        </button>
+        <Button variant="magic" onClick={generate} disabled={generating}>
+          {generating ? "Rolling the dice…" : "🎲 Re-Roll unlocked fields"}
+        </Button>
       </div>
 
       {errors.length > 0 && (
-        <div className="mb-6 rounded-lg border border-red-500/40 bg-red-500/10 p-4">
-          <h3 className="mb-1 font-semibold text-red-300">
+        <div className="mb-6 rounded-xl border border-brand-red/40 bg-brand-red/10 p-4">
+          <h3 className="mb-1 font-heading font-semibold text-brand-red">
             Validation found {errors.length} issue{errors.length > 1 ? "s" : ""}
           </h3>
-          <ul className="space-y-1 text-sm text-red-300">
+          <ul className="space-y-1 text-sm text-brand-red/90">
             {errors.map((e, i) => (
               <li key={i}>
-                <span className="font-mono text-xs text-red-400">[{e.field}]</span>{" "}
+                <span className="font-mono text-xs text-brand-ember">[{e.field}]</span>{" "}
                 {e.detail}
               </li>
             ))}
@@ -126,15 +118,15 @@ export function CharacterEditor() {
         </div>
       )}
 
-      <div className="mb-4 flex gap-2 border-b border-slate-800">
+      <div className="mb-4 flex gap-2 border-b border-ink-600">
         {(["sheet", "history", "trace"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-3 py-2 text-sm capitalize ${
+            className={`px-3 py-2 font-heading text-sm capitalize transition-colors ${
               tab === t
-                ? "border-b-2 border-arcane text-arcane"
-                : "text-slate-400"
+                ? "border-b-2 border-brand-gold text-brand-gold"
+                : "text-brand-stone/50 hover:text-brand-stone"
             }`}
           >
             {t === "trace" ? "Trace viewer" : t}
@@ -153,7 +145,7 @@ export function CharacterEditor() {
         <div className="space-y-8">
           <VersionHistory key={refreshKey} characterId={character.id} />
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-slate-300">
+            <h3 className="mb-2 font-heading text-sm font-semibold text-brand-stone">
               Compare versions
             </h3>
             <VersionDiff key={`diff-${refreshKey}`} characterId={character.id} />

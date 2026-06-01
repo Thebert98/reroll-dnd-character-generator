@@ -1,10 +1,16 @@
 import type { CharacterSheet } from "../types";
 import { FIELD_LABELS } from "../types";
 import { useEditor } from "../store";
+import { Badge } from "./ui/Badge";
 
 interface Props {
   field: keyof CharacterSheet;
 }
+
+// Shared input styling: dark ink field with a gold focus ring (style book).
+const INPUT =
+  "w-full rounded-lg border border-ink-600 bg-ink-900 px-2 py-1 text-sm outline-none " +
+  "focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/60";
 
 /** Render a single sheet field as an editable control plus a lock toggle.
  *  The lock toggle is the heart of the product: a locked field becomes a hard
@@ -19,25 +25,30 @@ export function FieldRow({ field }: Props) {
 
   return (
     <div
-      className={`rounded-lg border p-3 ${
-        locked ? "border-arcane bg-arcane/5" : "border-slate-800"
+      className={`rounded-xl border p-3 transition-colors ${
+        locked
+          ? "border-brand-gold/70 bg-brand-gold/5 shadow-gold"
+          : "border-ink-600/80 bg-ink-700/40"
       }`}
     >
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-sm font-medium text-slate-300">
+        <label className="flex items-center gap-2 font-heading text-sm font-medium text-brand-stone/90">
           {FIELD_LABELS[field]}
+          {f.source && <Badge kind="ai" />}
         </label>
         <button
           onClick={() => toggleLock(field)}
-          title={locked ? "Locked — AI will not change this" : "Unlocked"}
-          className={`text-xs ${locked ? "text-arcane" : "text-slate-500"}`}
+          title={locked ? "Locked — AI will not change this" : "Unlocked — AI may re-roll this"}
+          className={`text-xs font-heading transition-colors ${
+            locked ? "text-brand-gold" : "text-brand-stone/40 hover:text-brand-stone/70"
+          }`}
         >
           {locked ? "🔒 Locked" : "🔓 Unlocked"}
         </button>
       </div>
       <FieldInput field={field} />
       {f.source && (
-        <p className="mt-1 text-xs italic text-slate-500">why: {f.source}</p>
+        <p className="mt-1 text-xs italic text-brand-stone/45">why: {f.source}</p>
       )}
     </div>
   );
@@ -55,9 +66,9 @@ function FieldInput({ field }: Props) {
       <div className="grid grid-cols-6 gap-1">
         {keys.map((k) => (
           <div key={k} className="text-center">
-            <div className="text-[10px] uppercase text-slate-500">{k}</div>
+            <div className="text-[10px] uppercase text-brand-gold/70">{k}</div>
             <input
-              className="w-full rounded bg-slate-900 px-1 py-1 text-center"
+              className={`${INPUT} px-1 text-center`}
               type="number"
               value={stats[k] ?? ""}
               onChange={(e) =>
@@ -77,7 +88,7 @@ function FieldInput({ field }: Props) {
     const list = Array.isArray(value) ? (value as string[]) : [];
     return (
       <textarea
-        className="w-full rounded bg-slate-900 px-2 py-1 text-sm"
+        className={INPUT}
         rows={2}
         placeholder="One per line"
         value={list.join("\n")}
@@ -94,7 +105,7 @@ function FieldInput({ field }: Props) {
   if (["backstory", "personality"].includes(field)) {
     return (
       <textarea
-        className="w-full rounded bg-slate-900 px-2 py-1 text-sm"
+        className={INPUT}
         rows={3}
         value={(value as string) || ""}
         onChange={(e) => setFieldValue(field, e.target.value)}
@@ -105,7 +116,7 @@ function FieldInput({ field }: Props) {
   if (field === "level") {
     return (
       <input
-        className="w-24 rounded bg-slate-900 px-2 py-1"
+        className={`${INPUT} w-24`}
         type="number"
         min={1}
         max={20}
@@ -117,7 +128,7 @@ function FieldInput({ field }: Props) {
 
   return (
     <input
-      className="w-full rounded bg-slate-900 px-2 py-1"
+      className={INPUT}
       type="text"
       value={(value as string) || ""}
       onChange={(e) => setFieldValue(field, e.target.value)}
