@@ -1,5 +1,12 @@
 import { supabase } from "./supabase";
-import type { Character, CharacterSheet } from "../types";
+import type {
+  Character,
+  CharacterSheet,
+  CharacterVersion,
+  GenerateResult,
+  RunSummary,
+  TraceRun,
+} from "../types";
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -43,4 +50,22 @@ export const api = {
     }),
   deleteCharacter: (id: string) =>
     request<void>(`/characters/${id}`, { method: "DELETE" }),
+
+  generate: (id: string, body: { user_notes?: string; model?: string }) =>
+    request<GenerateResult>(`/characters/${id}/generate`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  listVersions: (id: string) =>
+    request<CharacterVersion[]>(`/characters/${id}/versions`),
+  restoreVersion: (id: string, versionNumber: number) =>
+    request<Character>(
+      `/characters/${id}/versions/${versionNumber}/restore`,
+      { method: "POST" }
+    ),
+
+  listRuns: (id: string) => request<RunSummary[]>(`/characters/${id}/runs`),
+  getRun: (runId: string) => request<TraceRun>(`/runs/${runId}`),
 };
+

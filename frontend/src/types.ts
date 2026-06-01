@@ -27,6 +27,56 @@ export interface Character {
   updated_at?: string;
 }
 
+export interface ValidationError {
+  field: string;
+  rule: string;
+  detail: string;
+}
+
+export interface GenerateResult {
+  character: Character;
+  validation_errors: ValidationError[];
+  run_id: string | null;
+  version_id: string | null;
+  version_number: number | null;
+}
+
+export interface CharacterVersion {
+  id: string;
+  character_id: string;
+  version_number: number;
+  sheet: CharacterSheet;
+  created_at?: string;
+}
+
+export interface RunSummary {
+  id: string;
+  character_id: string;
+  version_id: string | null;
+  model: string;
+  locked_fields: string[];
+  validation_errors?: ValidationError[] | null;
+  latency_ms?: number | null;
+  cost_usd?: number | null;
+  created_at?: string;
+}
+
+export interface RetrievedChunk {
+  section?: string;
+  text?: string;
+  content?: string;
+  score?: number;
+}
+
+export interface TraceRun extends RunSummary {
+  input_snapshot: Record<string, unknown>;
+  retrieved_chunks?: RetrievedChunk[] | null;
+  prompt?: string | null;
+  raw_output?: Record<string, unknown> | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+}
+
 export const SHEET_FIELDS: (keyof CharacterSheet)[] = [
   "name",
   "race",
