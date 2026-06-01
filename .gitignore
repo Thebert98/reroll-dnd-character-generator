@@ -12,6 +12,7 @@ venv/
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 
 # Env / secrets
 .env
@@ -27,3 +28,6 @@ dist/
 # Eval output
 backend/evals/results/*.json
 !backend/evals/results/.gitkeep
+
+# Local session log
+SESSION.md

@@ -1,8 +1,10 @@
 """Authentication: verify the Supabase-issued JWT on every request and expose
 the current user (id + raw token) to route handlers.
-"""
-from __future__ import annotations
 
+Supabase projects created in 2025+ sign user JWTs with asymmetric keys (ES256
+by default), so we verify against the project's JWKS. Legacy HS256-signed
+tokens are still accepted via the shared SUPABASE_JWT_SECRET as a fallback.
+"""
 from dataclasses import dataclass
 
 import jwt
@@ -12,6 +14,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from .config import settings
 
 _bearer = HTTPBearer(auto_error=True)
+_jwks_client = jwt.PyJWKClient(
+    f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+)
+_ASYMMETRIC_ALGS = ["ES256", "RS256", "EdDSA"]
 
 
 @dataclass
@@ -20,18 +26,34 @@ class CurrentUser:
     token: str
 
 
-def get_current_user(
-    creds: HTTPAuthorizationCredentials = Depends(_bearer),
-) -> CurrentUser:
-    token = creds.credentials
-    try:
-        payload = jwt.decode(
+def _decode(token: str) -> dict:
+    header = jwt.get_unverified_header(token)
+    alg = header.get("alg", "")
+    if alg == "HS256":
+        return jwt.decode(
             token,
             settings.supabase_jwt_secret,
             algorithms=["HS256"],
             audience="authenticated",
         )
-    except jwt.PyJWTError as exc:  # invalid / expired / wrong audience
+    if alg in _ASYMMETRIC_ALGS:
+        signing_key = _jwks_client.get_signing_key_from_jwt(token).key
+        return jwt.decode(
+            token,
+            signing_key,
+            algorithms=_ASYMMETRIC_ALGS,
+            audience="authenticated",
+        )
+    raise jwt.InvalidAlgorithmError(f"Unsupported alg: {alg!r}")
+
+
+def get_current_user(
+    creds: HTTPAuthorizationCredentials = Depends(_bearer),
+) -> CurrentUser:
+    token = creds.credentials
+    try:
+        payload = _decode(token)
+    except jwt.PyJWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid authentication token: {exc}",
