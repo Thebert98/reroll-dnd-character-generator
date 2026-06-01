@@ -100,7 +100,7 @@ def export_pdf(character_id: str, user: CurrentUser = Depends(get_current_user))
     story.append(Spacer(1, 0.3 * inch))
     story.append(
         Paragraph(
-            "Generated with Arcane Architect. Rules from SRD 5.1 (CC-BY-4.0).",
+            "Generated with Re:Roll — Character Builder. Rules from SRD 5.1 (CC-BY-4.0).",
             ParagraphStyle("foot", parent=styles["Italic"], fontSize=8,
                            textColor=colors.grey),
         )

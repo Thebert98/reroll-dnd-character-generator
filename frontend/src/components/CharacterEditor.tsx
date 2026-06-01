@@ -9,6 +9,7 @@ import { VersionHistory } from "./VersionHistory";
 import { VersionDiff } from "./VersionDiff";
 import { TraceViewer } from "./TraceViewer";
 import { Button } from "./ui/Button";
+import { IconReRoll, IconExport, IconSave } from "./brand/icons";
 
 type Tab = "sheet" | "history" | "trace";
 
@@ -70,17 +71,17 @@ export function CharacterEditor() {
         </h2>
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => api.download(character.id, "json")}>
-            Export JSON
+            <IconExport size={14} /> JSON
           </Button>
           <Button variant="secondary" size="sm" onClick={() => api.download(character.id, "pdf")}>
-            Export PDF
+            <IconExport size={14} /> PDF
           </Button>
           <Button
             variant={dirty ? "primary" : "secondary"}
             onClick={save}
             disabled={!dirty || saving}
           >
-            {saving ? "Saving…" : dirty ? "Save" : "Saved"}
+            <IconSave size={14} /> {saving ? "Saving…" : dirty ? "Save" : "Saved"}
           </Button>
         </div>
       </div>
@@ -98,7 +99,8 @@ export function CharacterEditor() {
           onChange={(e) => setNotes(e.target.value)}
         />
         <Button variant="magic" onClick={generate} disabled={generating}>
-          {generating ? "Rolling the dice…" : "🎲 Re-Roll unlocked fields"}
+          <IconReRoll size={16} />
+          {generating ? "Rolling the dice…" : "Re-Roll unlocked fields"}
         </Button>
       </div>
 
