@@ -5,6 +5,7 @@ import { supabase } from "./lib/supabase";
 import { Auth } from "./components/Auth";
 import { CharacterList } from "./components/CharacterList";
 import { CharacterEditor } from "./components/CharacterEditor";
+import { SharePage } from "./pages/SharePage";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -22,8 +23,20 @@ export default function App() {
   }, []);
 
   if (loading) return <div className="p-8">Loading…</div>;
-  if (!session) return <Auth />;
 
+  return (
+    <Routes>
+      {/* Public, read-only share view — available without auth. */}
+      <Route path="/share/:versionId" element={<SharePage />} />
+      <Route
+        path="*"
+        element={session ? <AppShell /> : <Auth />}
+      />
+    </Routes>
+  );
+}
+
+function AppShell() {
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">

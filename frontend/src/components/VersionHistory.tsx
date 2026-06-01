@@ -19,6 +19,11 @@ export function VersionHistory({ characterId }: { characterId: string }) {
     setCharacter(updated);
   }
 
+  function copyShareLink(versionId: string) {
+    const url = `${window.location.origin}/share/${versionId}`;
+    navigator.clipboard?.writeText(url);
+  }
+
   if (versions.length === 0)
     return <p className="text-sm text-slate-400">No versions yet.</p>;
 
@@ -40,12 +45,21 @@ export function VersionHistory({ characterId }: { characterId: string }) {
               {v.created_at?.slice(0, 19).replace("T", " ")}
             </div>
           </div>
-          <button
-            className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-arcane"
-            onClick={() => restore(v.version_number)}
-          >
-            Restore
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-arcane"
+              onClick={() => copyShareLink(v.id)}
+              title="Copy a public read-only link to this version"
+            >
+              Share
+            </button>
+            <button
+              className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-arcane"
+              onClick={() => restore(v.version_number)}
+            >
+              Restore
+            </button>
+          </div>
         </li>
       ))}
     </ul>

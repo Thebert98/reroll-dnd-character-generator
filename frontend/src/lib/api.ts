@@ -5,6 +5,7 @@ import type {
   CharacterVersion,
   GenerateResult,
   RunSummary,
+  SharedVersion,
   TraceRun,
 } from "../types";
 
@@ -67,5 +68,28 @@ export const api = {
 
   listRuns: (id: string) => request<RunSummary[]>(`/characters/${id}/runs`),
   getRun: (runId: string) => request<TraceRun>(`/runs/${runId}`),
+
+  // Read-only public share view (no auth header).
+  getShared: (versionId: string) =>
+    fetch(`${BASE}/share/versions/${versionId}`).then((r) => {
+      if (!r.ok) throw new Error(`${r.status}`);
+      return r.json() as Promise<SharedVersion>;
+    }),
+
+  // Trigger a browser download of an export (JSON or PDF).
+  async download(id: string, format: "json" | "pdf") {
+    const res = await fetch(`${BASE}/characters/${id}/export.${format}`, {
+      headers: await authHeader(),
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `character.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
+
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
 from ..auth import CurrentUser, get_current_user
@@ -16,6 +16,7 @@ from ..db import user_client
 from ..models import sheet_from_dict
 from ..pipeline import generate_character
 from ..rag import retrieve_rules
+from ..rate_limit import daily_generation_limit, limiter
 
 router = APIRouter(prefix="/characters", tags=["generate"])
 
@@ -46,7 +47,9 @@ def _next_version_number(db, character_id: str) -> int:
 
 
 @router.post("/{character_id}/generate", response_model=GenerateResponse)
+@limiter.limit(daily_generation_limit)
 def generate(
+    request: Request,
     character_id: str,
     body: GenerateRequest,
     user: CurrentUser = Depends(get_current_user),

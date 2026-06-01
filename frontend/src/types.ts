@@ -49,6 +49,14 @@ export interface CharacterVersion {
   created_at?: string;
 }
 
+export interface SharedVersion {
+  version_id: string;
+  character_name: string;
+  version_number: number;
+  sheet: CharacterSheet;
+  created_at?: string;
+}
+
 export interface RunSummary {
   id: string;
   character_id: string;
