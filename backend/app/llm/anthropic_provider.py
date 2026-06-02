@@ -23,9 +23,13 @@ def complete(*, system: str, user: str, schema: dict, model: str) -> LLMResult:
         "description": "Return the generated unlocked character fields.",
         "input_schema": schema,
     }
+    # All 12 unlocked fields (Fireplace "let the fire roll it all" path) produce
+    # roughly 12 values + 12 `source` rationales — backstory + personality alone
+    # can run 600+ tokens. 2048 truncated the tool_use input and the merger
+    # silently fell back to the empty sheet. Give the model real headroom.
     resp = client.messages.create(
         model=model,
-        max_tokens=2048,
+        max_tokens=8192,
         system=system,
         tools=[tool],
         tool_choice={"type": "tool", "name": "emit_character_fields"},
