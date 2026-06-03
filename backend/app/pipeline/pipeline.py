@@ -27,6 +27,7 @@ from .merge import locked_value_summary, merge_preserving_locks
 from .steps import (
     GROUPS,
     analyze_intent,
+    correct_field_group,
     generate_field_group,
     plan_fields,
 )
@@ -150,15 +151,63 @@ def generate_character(
             _ms(t),
         )
 
-        # Scope validation to the fields this group emitted so the corrective
-        # retry loop (next PR) can target them without re-litigating the
-        # earlier groups' choices.
+        # Scope validation to the fields this group emitted so the
+        # corrective retry can target them without re-litigating earlier
+        # groups' choices.
         group_errors = [e.model_dump() for e in validate_fields(merged, group_plan)]
         trace.add_step(
             f"validate.{group_name}",
             {"error_count": len(group_errors), "errors": group_errors},
             0,
         )
+
+        # Corrective retry — one shot per group. Re-prompt the model with
+        # the specific errors and a fix-only-these-fields instruction. If
+        # the second pass still has errors, accept the best-effort sheet;
+        # the final whole-sheet validate will report what's left.
+        if group_errors:
+            failing_fields = sorted({e["field"] for e in group_errors} & set(group_plan))
+            if failing_fields:
+                t = time.perf_counter()
+                fix_result, fix_prompt = correct_field_group(
+                    merged,
+                    failing_fields,
+                    group_errors,
+                    retrieved_chunks,
+                    user_notes,
+                    model,
+                )
+                merged = merge_preserving_locks(merged, fix_result.data)
+                for fname, payload in fix_result.data.items():
+                    if isinstance(payload, dict) and "value" in payload:
+                        generated_context[fname] = payload["value"]
+                    else:
+                        generated_context[fname] = payload
+                raw_output.update(fix_result.data)
+                total_input_tokens += fix_result.input_tokens
+                total_output_tokens += fix_result.output_tokens
+                total_cost_usd += fix_result.cost_usd or 0.0
+                last_model = fix_result.model
+                prompts.append(f"--- correct.{group_name} ---\n{fix_prompt}")
+                trace.add_step(
+                    f"correct.{group_name}",
+                    {
+                        "model": fix_result.model,
+                        "fields_corrected": failing_fields,
+                        "input_tokens": fix_result.input_tokens,
+                        "output_tokens": fix_result.output_tokens,
+                    },
+                    _ms(t),
+                )
+                # Re-validate the same subset so the trace shows the delta.
+                post_errors = [
+                    e.model_dump() for e in validate_fields(merged, group_plan)
+                ]
+                trace.add_step(
+                    f"revalidate.{group_name}",
+                    {"error_count": len(post_errors), "errors": post_errors},
+                    0,
+                )
 
     # 5. validate — full-sheet check is the final word reported to the API.
     t = time.perf_counter()
