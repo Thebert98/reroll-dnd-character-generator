@@ -36,6 +36,24 @@ def validate(sheet: CharacterSheet) -> List[ValidationError]:
     return errors
 
 
+def validate_fields(
+    sheet: CharacterSheet,
+    field_names: list[str],
+) -> List[ValidationError]:
+    """Run the full validator and return only the errors whose ``field``
+    is in the given list. Used by the per-group pipeline to scope the
+    corrective retry loop to just the group that ran.
+
+    Cross-field errors (e.g. proficiencies missing the background's skills)
+    surface against whichever field the validator blames — which matches
+    the group that owns that field in the GROUPS partition.
+    """
+    if not field_names:
+        return []
+    want = set(field_names)
+    return [e for e in validate(sheet) if e.field in want]
+
+
 def _validate_class(sheet: CharacterSheet) -> List[ValidationError]:
     cls = _val(sheet, "char_class")
     if cls and cls not in srd.CLASSES:

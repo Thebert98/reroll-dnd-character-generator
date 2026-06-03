@@ -34,9 +34,8 @@ _STAT_PRIORITY = {
 }
 
 
-def _parse_locked(user: str) -> dict:
-    """Pull the LOCKED FIELDS JSON object out of the assembled prompt."""
-    marker = "LOCKED FIELDS"
+def _parse_json_after(user: str, marker: str) -> dict:
+    """Pull a JSON object that appears right after ``marker`` in the prompt."""
     idx = user.find(marker)
     if idx == -1:
         return {}
@@ -59,6 +58,19 @@ def _parse_locked(user: str) -> dict:
         return json.loads(rest[start : end + 1])
     except json.JSONDecodeError:
         return {}
+
+
+def _parse_locked(user: str) -> dict:
+    """Pull LOCKED FIELDS + ALREADY GENERATED into a single context dict.
+
+    The graph-style pipeline carries identity values forward to later
+    groups via the ALREADY GENERATED section; the stub treats both as
+    fixed context so its deterministic baseline matches what a real LLM
+    sees on the second and third group calls.
+    """
+    ctx = _parse_json_after(user, "LOCKED FIELDS")
+    ctx.update(_parse_json_after(user, "ALREADY GENERATED"))
+    return ctx
 
 
 def _stats_for(char_class: str) -> dict:

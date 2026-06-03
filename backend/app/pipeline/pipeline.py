@@ -1,11 +1,18 @@
-"""The generation pipeline: five named, separately-traced steps.
+"""The generation pipeline: graph-style group nodes with per-group validation.
 
-    analyze_intent → retrieve_rules → plan_fields → generate → validate
+    analyze_intent → retrieve_rules → plan_fields → [
+        generate.identity  → validate.identity  → (correct.identity?)  →
+        generate.mechanics → validate.mechanics → (correct.mechanics?) →
+        generate.narrative → validate.narrative → (correct.narrative?)
+    ] → validate
 
-Each step appends to the Trace, which becomes one ``generation_runs`` row. The
-flow is deterministic and linear (no cycles, no dynamic routing), so a graph
-framework would add weight with no benefit. The public signature is unchanged
-from earlier phases so the API and evals don't churn.
+Each group is one structured-output LLM call scoped to a subset of the
+sheet fields (identity / mechanics / narrative). After every group we
+validate just that group's fields; if the validator objects, the next
+PR adds a single corrective LLM call seeded with the errors. The flow
+stays a DAG — bounded retries, no autonomous loops — so a graph
+framework would add weight with no benefit. Each named step appends to
+the Trace; the API signature is unchanged.
 """
 from __future__ import annotations
 
@@ -15,9 +22,14 @@ from typing import Callable
 from ..models import CharacterSheet
 from ..models.trace import Trace
 from ..rag import build_retrieval_query
-from ..validator import validate
+from ..validator import validate, validate_fields
 from .merge import locked_value_summary, merge_preserving_locks
-from .steps import analyze_intent, generate_fields, plan_fields
+from .steps import (
+    GROUPS,
+    analyze_intent,
+    generate_field_group,
+    plan_fields,
+)
 
 # A retriever takes a query string and returns SRD chunks. Injected so the
 # pipeline stays decoupled from the database and testable in isolation.
@@ -84,34 +96,83 @@ def generate_character(
         )
         return sheet, trace
 
-    # 4. generate — one structured-output LLM call.
-    t = time.perf_counter()
-    result, prompt = generate_fields(sheet, retrieved_chunks, plan, user_notes, model)
-    trace.add_step(
-        "generate",
-        {
-            "model": result.model,
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-            "fields_returned": list(result.data.keys()),
-        },
-        _ms(t),
-    )
-    merged = merge_preserving_locks(sheet, result.data)
+    # 4. generate — one structured-output LLM call per group, validated
+    # immediately so a later group's failure can't pollute earlier fields.
+    merged = sheet
+    raw_output: dict = {}
+    total_input_tokens = 0
+    total_output_tokens = 0
+    total_cost_usd = 0.0
+    last_model = model or ""
+    prompts: list[str] = []
 
-    # 5. validate — pure-Python SRD rules check.
+    # Context dict bridges groups: identity's outputs become mechanics'
+    # context so the LLM sees "char_class=Cleric, level=3" when picking
+    # stats / proficiencies / spells, even though those fields are still
+    # technically unlocked on the sheet.
+    generated_context: dict = {}
+
+    for group_name, group_fields in GROUPS:
+        group_plan = [f for f in group_fields if f in intent.unlocked_fields]
+        if not group_plan:
+            continue
+
+        t = time.perf_counter()
+        result, prompt = generate_field_group(
+            merged,
+            retrieved_chunks,
+            group_plan,
+            user_notes,
+            model,
+            context=generated_context,
+        )
+        merged = merge_preserving_locks(merged, result.data)
+        # Carry produced values forward for the next group.
+        for fname, payload in result.data.items():
+            if isinstance(payload, dict) and "value" in payload:
+                generated_context[fname] = payload["value"]
+            else:
+                generated_context[fname] = payload
+        raw_output.update(result.data)
+        total_input_tokens += result.input_tokens
+        total_output_tokens += result.output_tokens
+        total_cost_usd += result.cost_usd or 0.0
+        last_model = result.model
+        prompts.append(f"--- {group_name} ---\n{prompt}")
+        trace.add_step(
+            f"generate.{group_name}",
+            {
+                "model": result.model,
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
+                "fields_returned": list(result.data.keys()),
+            },
+            _ms(t),
+        )
+
+        # Scope validation to the fields this group emitted so the corrective
+        # retry loop (next PR) can target them without re-litigating the
+        # earlier groups' choices.
+        group_errors = [e.model_dump() for e in validate_fields(merged, group_plan)]
+        trace.add_step(
+            f"validate.{group_name}",
+            {"error_count": len(group_errors), "errors": group_errors},
+            0,
+        )
+
+    # 5. validate — full-sheet check is the final word reported to the API.
     t = time.perf_counter()
     errors = [e.model_dump() for e in validate(merged)]
     trace.add_step("validate", {"error_count": len(errors), "errors": errors}, _ms(t))
 
     trace.finish(
-        model=result.model,
-        prompt=prompt,
+        model=last_model,
+        prompt="\n\n".join(prompts),
         retrieved_chunks=retrieved_chunks,
-        raw_output=result.data,
+        raw_output=raw_output,
         validation_errors=errors,
-        input_tokens=result.input_tokens,
-        output_tokens=result.output_tokens,
-        cost_usd=result.cost_usd,
+        input_tokens=total_input_tokens,
+        output_tokens=total_output_tokens,
+        cost_usd=total_cost_usd or None,
     )
     return merged, trace
