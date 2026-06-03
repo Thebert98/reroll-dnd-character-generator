@@ -1,3 +1,3 @@
-from .validator import ValidationError, validate
+from .validator import ValidationError, validate, validate_fields
 
-__all__ = ["ValidationError", "validate"]
+__all__ = ["ValidationError", "validate", "validate_fields"]

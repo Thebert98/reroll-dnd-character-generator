@@ -31,6 +31,21 @@ FIELD_ORDER = [
     "backstory",
 ]
 
+# ---------------------------------------------------------------------------
+# Group split for the graph-style generation flow. Each group becomes one
+# LLM call, validated immediately so a later group's failure can't pollute
+# earlier fields. See pipeline.py for the orchestration.
+# ---------------------------------------------------------------------------
+IDENTITY_GROUP = ["name", "race", "char_class", "background", "alignment", "level"]
+MECHANICS_GROUP = ["stats", "proficiencies", "spells"]
+NARRATIVE_GROUP = ["equipment", "personality", "backstory"]
+
+GROUPS: list[tuple[str, list[str]]] = [
+    ("identity", IDENTITY_GROUP),
+    ("mechanics", MECHANICS_GROUP),
+    ("narrative", NARRATIVE_GROUP),
+]
+
 
 @dataclass
 class Intent:
@@ -70,9 +85,31 @@ def generate_fields(
     user_notes: str,
     model: str | None,
 ) -> tuple[LLMResult, str]:
-    """One structured-output LLM call. Returns the result and the prompt used."""
-    schema = build_schema(plan)
-    prompt = build_user_prompt(sheet, plan, user_notes, chunks)
+    """One structured-output LLM call. Returns the result and the prompt used.
+
+    Kept for backwards compatibility with anything still calling it directly;
+    the pipeline now uses ``generate_field_group`` per group.
+    """
+    return generate_field_group(sheet, chunks, plan, user_notes, model)
+
+
+def generate_field_group(
+    sheet: CharacterSheet,
+    chunks: list[dict],
+    group_plan: list[str],
+    user_notes: str,
+    model: str | None,
+    context: dict | None = None,
+) -> tuple[LLMResult, str]:
+    """One structured-output LLM call scoped to a single group's field list.
+
+    ``context`` is a ``{field: value}`` dict of values produced by earlier
+    graph nodes. They surface in the prompt's "ALREADY GENERATED" section so
+    the LLM has the full picture without us having to flip the sheet's lock
+    flags around between groups.
+    """
+    schema = build_schema(group_plan)
+    prompt = build_user_prompt(sheet, group_plan, user_notes, chunks, context=context)
     result = generate_structured(SYSTEM, prompt, schema, model=model)
     full_prompt = f"SYSTEM:\n{SYSTEM}\n\nUSER:\n{prompt}"
     return result, full_prompt
@@ -83,5 +120,10 @@ __all__ = [
     "analyze_intent",
     "plan_fields",
     "generate_fields",
+    "generate_field_group",
     "locked_value_summary",
+    "IDENTITY_GROUP",
+    "MECHANICS_GROUP",
+    "NARRATIVE_GROUP",
+    "GROUPS",
 ]

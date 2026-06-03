@@ -68,6 +68,7 @@ def build_user_prompt(
     unlocked: List[str],
     user_notes: str,
     chunks: list[dict] | None = None,
+    context: dict | None = None,
 ) -> str:
     locked = {
         f: getattr(sheet, f).value
@@ -78,6 +79,21 @@ def build_user_prompt(
     parts.append("LOCKED FIELDS (hard constraints — do not change):")
     parts.append(json.dumps(locked, indent=2) if locked else "(none)")
     parts.append("")
+    # Values produced by earlier nodes in the pipeline graph. They're not
+    # locked at the sheet level, but for THIS LLM call they should be
+    # treated as fixed context — the per-group split means each group has
+    # its own scope; bleeding identity revisions into the mechanics group
+    # would defeat the point.
+    if context:
+        non_empty = {
+            k: v for k, v in context.items() if v not in (None, "", [], {})
+        }
+        if non_empty:
+            parts.append(
+                "ALREADY GENERATED (decided by an earlier step — use as context, do not change):"
+            )
+            parts.append(json.dumps(non_empty, indent=2))
+            parts.append("")
     parts.append(f"FIELDS TO GENERATE (unlocked): {', '.join(unlocked)}")
     if user_notes:
         parts.append("")
