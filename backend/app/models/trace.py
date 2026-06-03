@@ -45,6 +45,16 @@ class Trace:
     def add_step(self, name: str, detail: dict[str, Any], duration_ms: int) -> None:
         self.steps.append(PipelineStep(name=name, detail=detail, duration_ms=duration_ms))
 
+    @property
+    def corrections_applied(self) -> list[str]:
+        """Group names that fired a corrective retry, e.g. ['mechanics'].
+
+        Read from the trace steps so this stays in sync with whatever the
+        pipeline produced; consumers (UI, eval) get a quick summary
+        without having to scan the full step list.
+        """
+        return [s.name.split(".", 1)[1] for s in self.steps if s.name.startswith("correct.")]
+
     def finish(
         self,
         *,
@@ -85,4 +95,5 @@ class Trace:
             "output_tokens": self.output_tokens,
             "cost_usd": self.cost_usd,
             "steps": [s.__dict__ for s in self.steps],
+            "corrections_applied": self.corrections_applied,
         }
