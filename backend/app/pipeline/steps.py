@@ -12,7 +12,12 @@ from dataclasses import dataclass
 from ..llm import LLMResult, generate_structured
 from ..models import CharacterSheet, SHEET_FIELDS
 from .merge import locked_value_summary, unlocked_field_names
-from .prompt import SYSTEM, build_schema, build_user_prompt
+from .prompt import (
+    SYSTEM,
+    build_corrective_user_prompt,
+    build_schema,
+    build_user_prompt,
+)
 
 # Dependency-aware field ordering. Stats come before spells (spell choices depend
 # on the casting stat); identity fields come first to anchor the theme.
@@ -115,12 +120,35 @@ def generate_field_group(
     return result, full_prompt
 
 
+def correct_field_group(
+    sheet: CharacterSheet,
+    failing_fields: list[str],
+    validation_errors: list[dict],
+    chunks: list[dict],
+    user_notes: str,
+    model: str | None,
+) -> tuple[LLMResult, str]:
+    """One corrective LLM call. Asks the model to fix the listed fields so
+    each validation error is resolved, keeping every other field exactly
+    as it stands on the sheet. Returns the (LLMResult, full prompt) pair
+    using the same shape as ``generate_field_group``.
+    """
+    schema = build_schema(failing_fields)
+    prompt = build_corrective_user_prompt(
+        sheet, failing_fields, validation_errors, user_notes, chunks
+    )
+    result = generate_structured(SYSTEM, prompt, schema, model=model)
+    full_prompt = f"SYSTEM:\n{SYSTEM}\n\nUSER:\n{prompt}"
+    return result, full_prompt
+
+
 __all__ = [
     "Intent",
     "analyze_intent",
     "plan_fields",
     "generate_fields",
     "generate_field_group",
+    "correct_field_group",
     "locked_value_summary",
     "IDENTITY_GROUP",
     "MECHANICS_GROUP",

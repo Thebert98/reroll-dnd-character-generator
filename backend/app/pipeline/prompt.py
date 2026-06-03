@@ -63,6 +63,63 @@ def build_schema(unlocked: List[str]) -> dict:
     return {"type": "object", "properties": props, "required": unlocked}
 
 
+def build_corrective_user_prompt(
+    sheet: CharacterSheet,
+    failing_fields: List[str],
+    validation_errors: list[dict],
+    original_user_notes: str,
+    chunks: list[dict] | None = None,
+) -> str:
+    """Build the prompt for a single corrective LLM call.
+
+    Tells the model exactly what failed and asks for fixes scoped to the
+    failing fields only. Everything else on the sheet stays as it was; the
+    pipeline runs this on the merged sheet immediately after a group's
+    first attempt failed validation.
+    """
+    locked = {
+        f: getattr(sheet, f).value
+        for f in SHEET_FIELDS
+        if getattr(sheet, f).locked and getattr(sheet, f).value not in (None, "", [], {})
+    }
+    current = {
+        f: getattr(sheet, f).value
+        for f in failing_fields
+        if getattr(sheet, f).value not in (None, "", [], {})
+    }
+    parts: list[str] = []
+    parts.append(
+        "Your previous output failed SRD validation. Fix ONLY the failing fields "
+        "and keep every other field on the sheet exactly as it is."
+    )
+    parts.append("")
+    parts.append("VALIDATION ERRORS (each is a fact you must satisfy):")
+    parts.append(json.dumps(validation_errors, indent=2))
+    parts.append("")
+    parts.append("CURRENT VALUES OF THE FAILING FIELDS (the values you must revise):")
+    parts.append(json.dumps(current, indent=2) if current else "(none set)")
+    parts.append("")
+    parts.append("LOCKED FIELDS (still hard constraints — do not change):")
+    parts.append(json.dumps(locked, indent=2) if locked else "(none)")
+    parts.append("")
+    parts.append(f"FIELDS TO RETURN: {', '.join(failing_fields)}")
+    if original_user_notes:
+        parts.append("")
+        parts.append(f"ORIGINAL USER NOTES / THEME: {original_user_notes}")
+    if chunks:
+        parts.append("")
+        parts.append("RELEVANT SRD RULES (cite these; do not contradict them):")
+        for c in chunks:
+            section = c.get("section", "SRD")
+            parts.append(f"[{section}] {c.get('text', c.get('content', ''))}")
+    parts.append("")
+    parts.append(
+        "Return a JSON object with exactly the failing fields above, "
+        "corrected so every listed validation error is resolved."
+    )
+    return "\n".join(parts)
+
+
 def build_user_prompt(
     sheet: CharacterSheet,
     unlocked: List[str],
