@@ -65,3 +65,19 @@ def test_level_out_of_range():
     sheet = _sheet(char_class="Wizard", level=25)
     rules = {e.rule for e in validate(sheet)}
     assert "level_range" in rules
+
+
+def test_unknown_alignment_flagged():
+    sheet = _sheet(char_class="Fighter", level=1, alignment="Chaotic Tuesday")
+    rules = {e.rule for e in validate(sheet)}
+    assert "alignment_exists" in rules
+
+
+def test_legal_alignment_passes():
+    sheet = _sheet(
+        char_class="Fighter", level=1, race="Human",
+        background="Soldier", alignment="Lawful Good",
+        stats={"str": 16, "dex": 12, "con": 14, "int": 10, "wis": 10, "cha": 8},
+        proficiencies=["Athletics", "Intimidation"],
+    )
+    assert validate(sheet) == []

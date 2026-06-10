@@ -149,6 +149,16 @@ RACES: dict[str, dict[str, int]] = {
 }
 
 # ---------------------------------------------------------------------------
+# Alignments: the nine SRD alignments + the abbreviated "Neutral" form.
+# Stored canonically (e.g. "Chaotic Good") on the sheet.
+# ---------------------------------------------------------------------------
+ALIGNMENTS: set[str] = {
+    "Lawful Good", "Neutral Good", "Chaotic Good",
+    "Lawful Neutral", "True Neutral", "Neutral", "Chaotic Neutral",
+    "Lawful Evil", "Neutral Evil", "Chaotic Evil",
+}
+
+# ---------------------------------------------------------------------------
 # Backgrounds: granted skill proficiencies. (SRD subset.)
 # ---------------------------------------------------------------------------
 BACKGROUNDS: dict[str, list[str]] = {

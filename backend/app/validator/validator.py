@@ -32,6 +32,7 @@ def validate(sheet: CharacterSheet) -> List[ValidationError]:
     errors += _validate_abilities(sheet)
     errors += _validate_race(sheet)
     errors += _validate_background(sheet)
+    errors += _validate_alignment(sheet)
     errors += _validate_spells(sheet)
     return errors
 
@@ -112,6 +113,18 @@ def _validate_abilities(sheet: CharacterSheet) -> List[ValidationError]:
                 )
             )
     return errors
+
+
+def _validate_alignment(sheet: CharacterSheet) -> List[ValidationError]:
+    alignment = _val(sheet, "alignment")
+    if alignment and alignment not in srd.ALIGNMENTS:
+        return [
+            ValidationError(
+                field="alignment", rule="alignment_exists",
+                detail=f"'{alignment}' is not one of the nine SRD alignments.",
+            )
+        ]
+    return []
 
 
 def _validate_race(sheet: CharacterSheet) -> List[ValidationError]:
