@@ -1,6 +1,6 @@
 # Eval results
 
-Latest run: **15/15 passed** (provider `stub`, 20260610T165151Z).
+Latest run: **19/19 passed** (provider `stub`, 20260610T165243Z).
 
 | Case | Result |
 |------|--------|
@@ -19,5 +19,9 @@ Latest run: **15/15 passed** (provider `stub`, 20260610T165151Z).
 | Barbarian level 1 (non-caster) | ✅ |
 | locked stats + class are preserved | ✅ |
 | illegal locked combo: Fighter with Magic Missile | ✅ |
+| locked alignment is preserved (Lawful Good Paladin) | ✅ |
+| locked name survives generation | ✅ |
+| locked background grants its skills (Acolyte Cleric) | ✅ |
+| fully-locked identity sheet still generates mechanics + narrative | ✅ |
 
 Run with `python evals/run_evals.py` (offline `stub` baseline) or `LLM_PROVIDER=openai|anthropic python evals/run_evals.py` to evaluate a real model.

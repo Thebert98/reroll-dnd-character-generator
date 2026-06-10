@@ -119,5 +119,44 @@
       "spells": { "value": ["Magic Missile"], "locked": true }
     },
     "assertions": ["validator_catches_error"]
+  },
+  {
+    "name": "locked alignment is preserved (Lawful Good Paladin)",
+    "input": {
+      "char_class": { "value": "Paladin", "locked": true },
+      "level": { "value": 3, "locked": true },
+      "alignment": { "value": "Lawful Good", "locked": true }
+    },
+    "assertions": ["validator_passes", "locked_fields_unchanged", "alignment_legal"]
+  },
+  {
+    "name": "locked name survives generation",
+    "input": {
+      "name": { "value": "Kael Stormbreaker", "locked": true },
+      "char_class": { "value": "Wizard", "locked": true },
+      "level": { "value": 3, "locked": true }
+    },
+    "assertions": ["validator_passes", "locked_fields_unchanged"]
+  },
+  {
+    "name": "locked background grants its skills (Acolyte Cleric)",
+    "input": {
+      "char_class": { "value": "Cleric", "locked": true },
+      "background": { "value": "Acolyte", "locked": true },
+      "level": { "value": 1, "locked": true }
+    },
+    "assertions": ["validator_passes", "locked_fields_unchanged", "background_grants_proficiencies"]
+  },
+  {
+    "name": "fully-locked identity sheet still generates mechanics + narrative",
+    "input": {
+      "name": { "value": "Aerith Lightbringer", "locked": true },
+      "char_class": { "value": "Cleric", "locked": true },
+      "race": { "value": "Hill Dwarf", "locked": true },
+      "background": { "value": "Acolyte", "locked": true },
+      "alignment": { "value": "Neutral Good", "locked": true },
+      "level": { "value": 4, "locked": true }
+    },
+    "assertions": ["validator_passes", "locked_fields_unchanged", "alignment_legal"]
   }
 ]

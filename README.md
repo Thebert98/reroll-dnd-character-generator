@@ -100,10 +100,11 @@ python evals/run_evals.py                      # offline baseline (stub)
 LLM_PROVIDER=openai python evals/run_evals.py  # evaluate gpt-4o-mini
 ```
 
-Latest committed run: **15/15 passed** — full table in
+Latest committed run: **19/19 passed** — full table in
 [`backend/evals/RESULTS.md`](backend/evals/RESULTS.md). Coverage: pure scratch
-generation, single/several locked fields, casters, non-casters, and illegal
-combinations the validator must catch.
+generation, single/several locked fields, casters, non-casters, illegal
+combinations the validator must catch, locked alignment / name / background
+preservation, and fully-locked identity sheets.
 
 ## Architecture
 

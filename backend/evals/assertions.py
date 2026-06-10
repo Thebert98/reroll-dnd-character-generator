@@ -94,6 +94,29 @@ def non_caster_has_no_spells(ctx: Context):
     return (len(spells) == 0, f"non-caster {cls} has spells: {spells}")
 
 
+def alignment_legal(ctx: Context):
+    merged: CharacterSheet = ctx["merged"]
+    alignment = _v(merged, "alignment")
+    if not alignment:
+        return (True, "")
+    return (
+        alignment in srd.ALIGNMENTS,
+        f"alignment {alignment!r} is not one of the nine SRD alignments",
+    )
+
+
+def background_grants_proficiencies(ctx: Context):
+    merged: CharacterSheet = ctx["merged"]
+    bg = _v(merged, "background")
+    profs = _v(merged, "proficiencies") or []
+    if bg not in srd.BACKGROUNDS:
+        return (True, "")
+    if not isinstance(profs, list) or not profs:
+        return (True, "")
+    missing = [s for s in srd.BACKGROUNDS[bg] if s not in profs]
+    return (not missing, f"background {bg!r} missing granted skills: {missing}")
+
+
 ASSERTIONS: dict[str, Assertion] = {
     "validator_passes": validator_passes,
     "validator_catches_error": validator_catches_error,
@@ -103,4 +126,6 @@ ASSERTIONS: dict[str, Assertion] = {
     "spells_within_cap": spells_within_cap,
     "caster_has_spells": caster_has_spells,
     "non_caster_has_no_spells": non_caster_has_no_spells,
+    "alignment_legal": alignment_legal,
+    "background_grants_proficiencies": background_grants_proficiencies,
 }
