@@ -162,4 +162,104 @@ Each fix lands in its own commit so revert is per-improvement. Tests/evals run a
 
 ---
 
-*This file is the source of truth for the audit. Updated at the end of Phase 2 with final status.*
+## Phase 2 — final status
+
+Tests + evals + build at the end of Phase 2:
+
+- `pytest`: **21/21** (was 19/19; added 2 alignment tests).
+- `python evals/run_evals.py`: **19/19** (was 15/15; added 4 locked-field cases).
+- `npm run build`: clean. 412 KB / 118 KB gzipped.
+- Backend imports + dummy-env startup: clean.
+
+### Resolved
+
+**Backend bugs**
+
+| # | Resolution | Commit |
+|---|---|---|
+| B1 | **False positive.** `embed()` IS wrapped by `retrieve_rules`'s try/except at `rag/retrieval.py:37-48` — embedding failures already degrade to empty chunks. The agent's read of `embeddings.py` in isolation missed the caller. No fix needed. | — |
+| B2 | `ALIGNMENTS` set + `_validate_alignment` + two tests. | `3444698` |
+| B3 | DELETE 404 on missing row. | `0cf6677` |
+| B4 | 401 detail no longer echoes PyJWT exception. | `175776b` |
+| B5 | Rate-limit key verifies signature via shared `_decode`. | `d710683` |
+| B6 | `dt.datetime.utcnow()` → `dt.datetime.now(dt.UTC)`. | `175776b` |
+| B7 | **Documented future work.** Share link expiry needs a schema change; deferred. | — |
+
+**Frontend bugs**
+
+| # | Resolution | Commit |
+|---|---|---|
+| F1 | Delete button + IconTrash + ConfirmDialog in CharacterEditor → `api.deleteCharacter` → nav home. | `58a539e` |
+| F2 | `<ErrorBoundary>` wraps Routes; recoverable card with Try Again + Reload. | `cb32611` |
+| F3-F5 | `runWithToast()` helper threads through save/generate/create with success+failure toasts. | `58a539e` |
+| F6 | `<ConfirmDialog>` fires on restore when editor is dirty; restore goes through the toaster. | `58a539e` |
+| F7 | `copyShareLink` shows "Share link copied" success or "Couldn't reach the clipboard" failure. | `58a539e` |
+| F8 | Trace + Version loaders set explicit error banners distinct from empty state; TraceDetail has its own spinner. | `58a539e` |
+| F9 | `runWithToast` strips the leading `^\d{3}:\s*` HTTP-prefix from raw API errors before toasting. | `58a539e` |
+| F10 | App.tsx clears `useEditor.character` on sign-out. | `cb32611` |
+
+**Functional improvements**
+
+| # | Resolution | Commit |
+|---|---|---|
+| I1 | SPELLS pool expanded 41 → 97 entries covering Guiding Bolt and 50+ other high-frequency SRD spells across cantrips through 5th. | `a114400` |
+| I2 | Same as B2. | — |
+| I3 | False positive (was the duplicate of B1). | — |
+
+**Design / UX**
+
+| # | Resolution | Commit |
+|---|---|---|
+| D1 | `<ToasterProvider>` + `useToast()`. | `cb32611` |
+| D2 | `<ConfirmDialog>` used by delete + restore-when-dirty. | `cb32611` / `58a539e` |
+| D3 | "Share link copied" toast on success. | `58a539e` |
+| D6 | Trace/Version loaders distinguish "no data" from "failed to load". | `58a539e` |
+
+**Portfolio readiness**
+
+| # | Resolution | Commit |
+|---|---|---|
+| R3 | GitHub Actions CI: backend pytest + evals + frontend build. | `2668ff4` |
+| R5 | CLAUDE.md orientation doc added. | `3c94e39` |
+| R7 | Subsumed by B6. | — |
+
+### Recommended future work (deferred, not done on this branch)
+
+These are real but out-of-scope for an audit/fix pass — they need schema work, design choices, or content the user supplies:
+
+1. **B7 / R9** — Share-link expiry + revoke. Needs a `shared_versions(token uuid pk, version_id uuid, expires_at, revoked_at)` table and a UI to manage links.
+2. **I4** — Surface generation cost/tokens in the editor (currently only in TraceViewer).
+3. **I5 / I6** — Multiclass + subclass + HP / hit dice / saving throws / skills. Each is a real backend feature: schema field → prompt → validator → eval → frontend. The README's "multiclass" mention in the resume framing is aspirational; the model only carries `char_class` today.
+4. **D4** — Cmd/Ctrl+S keyboard shortcut for save.
+5. **D5** — VersionDiff auto-defaults (currently the user has to pick both sides manually).
+6. **D7** — CharacterList: relative timestamps + inline delete.
+7. **D8** — Mobile pass beyond the existing `sm:` breakpoints (editor + trace tabs feel cramped at 360px).
+8. **D9** — Vibe-textarea character count + example chips.
+9. **D10 / R4** — "About" link / tagline on the Auth screen so signed-out reviewers see what the app does.
+10. **R1 / R2 / R8** — Demo GIF, live URLs in the README header, screenshot section. User-supplied content.
+11. **R6** — Distill SESSION.md's deploy story into the README.
+12. **Out-of-scope per spec reconciliation** — the audit prompt's portrait/party/song features are not implemented in ReRoll. If you want them here, that's a separate scope expansion.
+
+### Diff vs main (audit branch summary)
+
+11 commits, 23 files, +943 / −64:
+
+```
+3c94e39 docs: CLAUDE.md
+2668ff4 ci: GitHub Actions
+bf86afe test: expand eval harness (15 → 19)
+a114400 feat: expand SRD spell pool (41 → 97)
+58a539e feat: error handling + delete UI + restore confirm + share-copied
+cb32611 feat: ToasterProvider + ErrorBoundary + ConfirmDialog
+d710683 fix: verify JWT signature in rate-limit key (B5)
+175776b fix: stop leaking JWT decode detail + drop datetime.utcnow (B4, B6)
+0cf6677 fix: DELETE /characters/{id} returns 404 (B3)
+3444698 fix: validate alignment against SRD's nine alignments (B2)
+a3a018a Phase 1: AUDIT.md
+```
+
+Net result: every audit-flagged bug except B7 (a real but deferred schema item) is closed; the flagship locked-field iteration is now covered by 6 of the 19 eval cases (was 2); a real CI checks every change. Each commit is a single concern, so the user can `git revert <sha>` any one of them in isolation.
+
+---
+
+*Audit complete on `fable/audit-complete`. Ready for review.*
