@@ -54,9 +54,12 @@ def get_current_user(
     try:
         payload = _decode(token)
     except jwt.PyJWTError as exc:
+        # Don't echo the decoder's internal message back to the client — it
+        # leaks algo/key-mismatch detail. The cause is still chained via
+        # `from exc` so server logs keep the full trace.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid authentication token: {exc}",
+            detail="Invalid authentication token",
         ) from exc
 
     user_id = payload.get("sub")

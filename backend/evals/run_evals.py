@@ -85,7 +85,7 @@ def main() -> int:
     # Write a timestamped JSON (gitignored) and update the tracked summary.
     out_dir = HERE / "results"
     out_dir.mkdir(exist_ok=True)
-    stamp = dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
     payload = {
         "timestamp": stamp,
         "provider": provider,
