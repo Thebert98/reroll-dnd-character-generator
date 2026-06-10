@@ -7,33 +7,44 @@ import { CharacterList } from "./components/CharacterList";
 import { CharacterEditor } from "./components/CharacterEditor";
 import { SharePage } from "./pages/SharePage";
 import { Logo } from "./components/brand/Logo";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
+import { ToasterProvider } from "./components/ui/Toaster";
+import { useEditor } from "./store";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const setCharacter = useEditor((s) => s.setCharacter);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) =>
-      setSession(s)
-    );
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
+      // Clear in-memory editor state on sign-out so the next user doesn't
+      // momentarily see the previous user's character.
+      if (!s) setCharacter(null);
+    });
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [setCharacter]);
 
   if (loading) return <div className="p-8">Loading…</div>;
 
   return (
-    <Routes>
-      {/* Public, read-only share view — available without auth. */}
-      <Route path="/share/:versionId" element={<SharePage />} />
-      <Route
-        path="*"
-        element={session ? <AppShell /> : <Auth />}
-      />
-    </Routes>
+    <ToasterProvider>
+      <ErrorBoundary>
+        <Routes>
+          {/* Public, read-only share view — available without auth. */}
+          <Route path="/share/:versionId" element={<SharePage />} />
+          <Route
+            path="*"
+            element={session ? <AppShell /> : <Auth />}
+          />
+        </Routes>
+      </ErrorBoundary>
+    </ToasterProvider>
   );
 }
 
