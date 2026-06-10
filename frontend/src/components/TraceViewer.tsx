@@ -8,15 +8,34 @@ import type { RunSummary, TraceRun } from "../types";
 export function TraceViewer({ characterId }: { characterId: string }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [selected, setSelected] = useState<TraceRun | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
-    api.listRuns(characterId).then(setRuns);
+    setLoadError(null);
+    api.listRuns(characterId).then(setRuns).catch((err: Error) => {
+      setLoadError(err.message.replace(/^\d{3}:\s*/, ""));
+    });
   }, [characterId]);
 
   async function open(runId: string) {
-    setSelected(await api.getRun(runId));
+    setLoadingDetail(true);
+    try {
+      setSelected(await api.getRun(runId));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLoadError(msg.replace(/^\d{3}:\s*/, ""));
+    } finally {
+      setLoadingDetail(false);
+    }
   }
 
+  if (loadError)
+    return (
+      <p className="text-sm text-brand-red">
+        Could not load trace history — {loadError}
+      </p>
+    );
   if (runs.length === 0)
     return <p className="text-sm text-brand-stone/60">No generations yet.</p>;
 
@@ -45,7 +64,15 @@ export function TraceViewer({ characterId }: { characterId: string }) {
           );
         })}
       </ul>
-      <div>{selected ? <TraceDetail run={selected} /> : <Hint />}</div>
+      <div>
+        {loadingDetail ? (
+          <p className="text-sm text-brand-stone/60">Loading trace…</p>
+        ) : selected ? (
+          <TraceDetail run={selected} />
+        ) : (
+          <Hint />
+        )}
+      </div>
     </div>
   );
 }

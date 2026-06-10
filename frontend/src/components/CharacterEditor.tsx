@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { useEditor } from "../store";
 import { SHEET_FIELDS } from "../types";
@@ -9,7 +9,9 @@ import { VersionHistory } from "./VersionHistory";
 import { VersionDiff } from "./VersionDiff";
 import { TraceViewer } from "./TraceViewer";
 import { Button } from "./ui/Button";
-import { IconReRoll, IconExport, IconSave } from "./brand/icons";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { runWithToast, useToast } from "./ui/Toaster";
+import { IconReRoll, IconExport, IconSave, IconTrash } from "./brand/icons";
 
 type Tab = "sheet" | "history" | "trace";
 
@@ -20,47 +22,85 @@ export function CharacterEditor() {
   const setCharacter = useEditor((s) => s.setCharacter);
   const markClean = useEditor((s) => s.markClean);
 
+  const toaster = useToast();
+  const nav = useNavigate();
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [tab, setTab] = useState<Tab>("sheet");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    api.getCharacter(id).then(setCharacter);
+    setLoadError(null);
+    api.getCharacter(id).then(setCharacter).catch((err: Error) => {
+      setLoadError(err.message.replace(/^\d{3}:\s*/, ""));
+    });
   }, [id, setCharacter]);
 
   async function save() {
     if (!character) return;
     setSaving(true);
-    try {
-      await api.updateCharacter(character.id, {
+    const result = await runWithToast(
+      toaster,
+      api.updateCharacter(character.id, {
         name: (character.sheet.name.value as string) || character.name,
         sheet: character.sheet,
-      });
-      markClean();
-    } finally {
-      setSaving(false);
-    }
+      }),
+      { success: "Saved", failure: "Could not save" },
+    );
+    setSaving(false);
+    if (result) markClean();
   }
 
   async function generate() {
     if (!character) return;
     setGenerating(true);
-    try {
-      // Persist current locks/values first so the server generates from them.
-      await api.updateCharacter(character.id, { sheet: character.sheet });
-      const result = await api.generate(character.id, { user_notes: notes });
-      setCharacter(result.character);
-      setErrors(result.validation_errors);
-      setRefreshKey((k) => k + 1);
-    } finally {
+    // Save first so the server generates from current locks/values.
+    const saved = await runWithToast(
+      toaster,
+      api.updateCharacter(character.id, { sheet: character.sheet }),
+      { failure: "Could not save before re-roll" },
+    );
+    if (!saved) {
       setGenerating(false);
+      return;
+    }
+    const result = await runWithToast(
+      toaster,
+      api.generate(character.id, { user_notes: notes }),
+      { success: "Rolled the dice", failure: "Generation failed" },
+    );
+    setGenerating(false);
+    if (!result) return;
+    setCharacter(result.character);
+    setErrors(result.validation_errors);
+    setRefreshKey((k) => k + 1);
+  }
+
+  async function deleteCharacter() {
+    if (!character) return;
+    setConfirmDelete(false);
+    const result = await runWithToast(
+      toaster,
+      api.deleteCharacter(character.id),
+      { success: "Character banished", failure: "Could not delete character" },
+    );
+    if (result !== undefined) {
+      setCharacter(null);
+      nav("/");
     }
   }
 
+  if (loadError)
+    return (
+      <div className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4 text-sm text-brand-red">
+        Could not load character — {loadError}
+      </div>
+    );
   if (!character) return <div>Loading…</div>;
 
   return (
@@ -70,10 +110,26 @@ export function CharacterEditor() {
           {(character.sheet.name.value as string) || "Untitled"}
         </h2>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => api.download(character.id, "json")}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              runWithToast(toaster, api.download(character.id, "json"), {
+                failure: "JSON export failed",
+              })
+            }
+          >
             <IconExport size={14} /> JSON
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => api.download(character.id, "pdf")}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              runWithToast(toaster, api.download(character.id, "pdf"), {
+                failure: "PDF export failed",
+              })
+            }
+          >
             <IconExport size={14} /> PDF
           </Button>
           <Button
@@ -83,8 +139,26 @@ export function CharacterEditor() {
           >
             <IconSave size={14} /> {saving ? "Saving…" : dirty ? "Save" : "Saved"}
           </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setConfirmDelete(true)}
+            title="Delete this character"
+          >
+            <IconTrash size={14} /> Delete
+          </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete this character?"
+        body="This cannot be undone. Version history and trace logs will also be removed."
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={deleteCharacter}
+        onCancel={() => setConfirmDelete(false)}
+      />
 
       <div className="mb-6 rounded-xl border border-brand-arcane/40 bg-brand-arcane/5 p-4">
         <p className="mb-2 font-heading text-sm text-brand-stone/80">

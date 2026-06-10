@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import type { Character } from "../types";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
+import { runWithToast, useToast } from "./ui/Toaster";
 
 // A character counts as "AI generated" once any field carries a source note.
 function isGenerated(c: Character): boolean {
@@ -15,22 +16,50 @@ function isGenerated(c: Character): boolean {
 export function CharacterList() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const nav = useNavigate();
+  const toaster = useToast();
 
   async function refresh() {
-    setCharacters(await api.listCharacters());
-    setLoading(false);
+    setLoadError(null);
+    try {
+      setCharacters(await api.listCharacters());
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLoadError(msg.replace(/^\d{3}:\s*/, ""));
+    } finally {
+      setLoading(false);
+    }
   }
   useEffect(() => {
     refresh();
   }, []);
 
   async function create() {
-    const c = await api.createCharacter("Untitled");
-    nav(`/characters/${c.id}`);
+    setCreating(true);
+    const c = await runWithToast(
+      toaster,
+      api.createCharacter("Untitled"),
+      { failure: "Could not create character" },
+    );
+    setCreating(false);
+    if (c) nav(`/characters/${c.id}`);
   }
 
   if (loading) return <div className="text-brand-stone/60">Loading characters…</div>;
+  if (loadError)
+    return (
+      <div className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4 text-sm text-brand-red">
+        Could not load characters — {loadError}{" "}
+        <button
+          onClick={refresh}
+          className="ml-2 underline hover:text-brand-stone"
+        >
+          Retry
+        </button>
+      </div>
+    );
 
   return (
     <div>
@@ -38,8 +67,8 @@ export function CharacterList() {
         <h2 className="font-heading text-2xl font-bold text-brand-stone">
           Your characters
         </h2>
-        <Button variant="primary" onClick={create}>
-          + New character
+        <Button variant="primary" onClick={create} disabled={creating}>
+          {creating ? "Creating…" : "+ New character"}
         </Button>
       </div>
       {characters.length === 0 ? (
