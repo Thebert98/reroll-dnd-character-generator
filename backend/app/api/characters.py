@@ -101,5 +101,7 @@ def update_character(
 @router.delete("/{character_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_character(character_id: str, user: CurrentUser = Depends(get_current_user)):
     db = user_client(user.token)
-    db.table("characters").delete().eq("id", character_id).execute()
+    res = db.table("characters").delete().eq("id", character_id).execute()
+    if not res.data:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Character not found")
     return None
