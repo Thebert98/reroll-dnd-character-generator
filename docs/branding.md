@@ -1,72 +1,54 @@
-# Re:Roll — Branding implementation
+# Re:Roll — Branding implementation (Tavern theme)
 
-How the **Re:Roll Character Builder** style book maps onto the frontend.
+How the **Re:Roll Character Builder** "Tavern" style book maps onto the frontend.
+Warm, cozy, and adventurous — candlelight on wood grain and parchment.
+
+> This is an **alternate branding** explored on the `claude/tavern-rebrand`
+> branch and intentionally **not merged to `main`**. `main` carries the earlier
+> (cool gold/arcane) Re:Roll theme.
 
 ## Identity
 
-- **Name:** Re:Roll — Character Builder (formerly the working title "Arcane Architect").
-- **Tagline:** *Roll your legend. Build your story.*
-- **Descriptor:** AI-powered D&D character generator.
-- **Mascot:** Dicewyrm (a friendly red dragon) — see asset slots below.
+- **Name:** Re:Roll — Character Builder.
+- **Tagline (display):** *Roll. Create. Adventure.*
+- **Hero line:** *Your next legend awaits at the tavern.*
+- **Descriptor:** The AI-powered fantasy character builder for tabletop RPG adventurers.
 
-## Color palette
+## Color palette (warm tavern)
 
 | Token | Hex | Use |
 |-------|-----|-----|
-| `brand-red` (Dragon Red) | `#B71A1A` | Primary buttons, primary actions |
-| `brand-gold` (Ancient Gold) | `#D4AF37` | Logo, headings, accents, focus |
-| `brand-green` (Forest Green) | `#2E7D32` | Success / "valid" states |
-| `brand-slate` (Deep Slate) | `#1E2D3B` | Surfaces / borders |
-| `brand-stone` (Stone) | `#C7C6BB` | Light neutral text |
-| `brand-ember` | `#FF6A10` | Highlights, re-roll energy |
-| `brand-arcane` | `#6B4DFF` | AI / magic affordances |
-| `brand-sky` | `#36AAFF` | Info / links |
-| `brand-teal` | `#20C997` | Secondary success |
-| `brand-gray` | `#7A806C` | Muted text |
+| `tavern-amber` / `brand-gold` (Ale Amber) | `#D8BA1F` | Accents, headings, logo, focus |
+| `tavern-hearth` (Hearth Gold) | `#E6C36B` | Soft glow / "magic" accent |
+| `tavern-oak` (Oak Brown) | `#7A4B2A` | Secondary trim |
+| `tavern-walnut` / `brand-slate` (Dark Walnut) | `#382417` | Surfaces / borders |
+| `tavern-parchment` / `brand-stone` (Parchment) | `#F3E6C7` | Light neutral text |
+| `tavern-charcoal` (Soot Charcoal) | `#1E1A17` | Page background |
+| `tavern-forest` / `brand-green` (Forest Green) | `#2E5B3A` | Success / "valid" |
+| `tavern-burgundy` / `brand-red` (Deep Burgundy) | `#7A1F23` | Primary action / danger / errors |
+| `tavern-iron` / `brand-gray` (Iron Grey) | `#5A5F66` | Muted text |
+| `tavern-candle` (Inn Candle) | `#FFF3D6` | Brightest highlights |
+| `tavern-ember` / `brand-ember` | `#C9772E` | Hearth-fire highlights / re-roll |
 
-Dark UI surfaces use an `ink` scale derived from Deep Slate
-(`ink-900` page → `ink-600` deep slate).
+Dark surfaces use an `ink` scale shifted from cool blue to warm charcoal→walnut
+(`ink-900` charcoal → `ink-600` walnut).
 
 ## Typography
 
-- **Cinzel** (`font-display`) — the logo and hero display moments.
-- **Sora** (`font-heading`) — section titles and UI headings.
-- **Inter** (`font-body`) — body text and inputs.
+- **IM Fell English SC** (`font-display`) — the logo and display moments
+  (old-printing-press tavern serif).
+- **Merriweather** (`font-heading` / `font-body`) — headings, UI, and body.
 
-## Components (style-book spec)
+## How the re-skin works
 
-- **Buttons:** Primary (Dragon Red), Secondary (Deep Slate outline), Ghost
-  (text only), Danger (Ember/Red).
-- **Tags/Badges:** New, Popular, AI Generated, Homebrew, Official.
-- **Cards:** dark `ink-700` surface, gold hairline accent on hover.
-- **Inputs:** dark field, gold/sky focus ring.
+The components built earlier route every color through semantic `brand-*` and
+`ink-*` tokens, so this entire theme is achieved mostly by **re-pointing those
+tokens** (in `tailwind.config.js`) to tavern values and swapping the fonts —
+plus warming the SVG favicon/d20/logo and the headline copy. No component logic
+changes.
 
-## Icons
+## Asset slots
 
-Class icons (Fighter, Wizard, Rogue, Cleric, Ranger, Bard, Warlock, Paladin,
-Druid, Monk, Barbarian, Sorcerer) and action icons (**Generate, Re-Roll, Lock
-Field, Save, Export**) — implemented as inline SVG components for crispness.
-
-## Asset approach
-
-Brand **marks** are authored as SVG (sharp at any size): favicon/d20 die, the
-Re:Roll wordmark, and the arcane background pattern. Photographic raster art
-(dragon hero logo, Dicewyrm mascot illustration, header/social banners) is **not**
-generated here — drop final art into `frontend/public/brand/` at these slots:
-
-| File | Purpose | Recommended size |
-|------|---------|------------------|
-| `public/brand/logo.png` | Full dragon hero logo | 1200×630 transparent |
-| `public/brand/mascot-dicewyrm.png` | Mascot illustration | 512×512 transparent |
-| `public/brand/header-banner.jpg` | Marketing header | 1600×400 |
-| `public/og-image.png` | Social / OpenGraph preview | 1200×630 |
-
-Until those exist, the app uses the SVG logo lockup and renders fine without them.
-
-## Rollout (PRs)
-
-1. Design tokens & typography (this doc).
-2. Brand assets — favicon, d20 mark, wordmark/logo, pattern, meta.
-3. App shell & copy — Re:Roll naming, header logo, taglines, footer.
-4. UI components — buttons, badges, cards, inputs.
-5. Character sheet theming & action icons.
+Brand marks are SVG (favicon medallion, d20, wordmark). Photographic tavern art
+(dragon/innkeeper hero, header banner, OG image) drops into
+`frontend/public/brand/` as documented there.

@@ -24,11 +24,11 @@ export function Auth() {
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="mb-8 flex flex-col items-center text-center">
         <Logo size="lg" />
-        <p className="mt-6 font-heading text-lg font-semibold uppercase tracking-[0.25em] text-brand-stone">
-          Roll your legend. Build your story.
+        <p className="mt-6 font-heading text-xl font-bold text-brand-gold">
+          Your next legend awaits at the tavern.
         </p>
-        <p className="mt-1 text-sm text-brand-stone/50">
-          An AI-powered D&amp;D character generator.
+        <p className="mt-2 text-sm text-brand-stone/60">
+          The AI-powered fantasy character builder for tabletop RPG adventurers.
         </p>
       </div>
 
