@@ -122,15 +122,6 @@ deterministic and linear (no graph framework, by design).
 
 Set env vars per [`.env.example`](.env.example).
 
-## Resume framing
-
-> Built a D&D character generator with locked-field iteration: users lock any
-> subset of fields and the AI regenerates the rest under SRD rule constraints.
-> Includes a validation layer that rejects illegal combinations, a RAG pipeline
-> grounding generations in CC-licensed SRD rules with citations, a trace viewer
-> exposing retrieved context and token usage per generation, and an eval harness
-> tracking prompt-change regressions. React, FastAPI, Supabase pgvector,
-> structured outputs.
 
 ## Attribution
 
